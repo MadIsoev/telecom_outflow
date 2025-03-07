@@ -17,6 +17,9 @@ st.dataframe(data.head())
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')  # Преобразуем TotalCharges в числовой формат
 data['TotalCharges'] = data['TotalCharges'].fillna(data['TotalCharges'].median())  # Заполняем NaN медианой
 
+# Удаляем строки с пропущенными значениями в других столбцах
+data = data.dropna()
+
 # Кодирование категориальных признаков
 le = LabelEncoder()
 data['gender'] = le.fit_transform(data['gender'])
@@ -30,7 +33,7 @@ data['Churn'] = le.fit_transform(data['Churn'])
 X = data.drop(columns=['Churn'])
 y = data['Churn']
 
-# Масштабируем признаки
+# Масштабируем признаки (уже убеждаемся, что все признаки числовые)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
