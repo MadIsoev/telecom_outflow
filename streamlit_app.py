@@ -88,6 +88,13 @@ else:
     st.success("Этот клиент, вероятно, останется.")
 st.write(f"🔍 Вероятность оттока: {input_proba[0]:.2f}")
 
+# Распределение целевого признака
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
+plt.title('Распределение оттока клиентов (0 - останется, 1 - уйдёт)')
+st.pyplot(plt)
+
+
 # Вывод результатов модели
 st.subheader('📊 Результаты модели')
 st.metric(label='Точность', value=f"{accuracy:.4f}")
@@ -114,8 +121,3 @@ sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='
 plt.xticks(rotation=45)
 st.pyplot(fig2)
 
-# Распределение целевого признака
-plt.figure(figsize=(6, 4))
-sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
-plt.title('Распределение оттока клиентов (0 - останется, 1 - уйдёт)')
-st.pyplot(plt)
