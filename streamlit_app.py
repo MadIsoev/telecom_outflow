@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from catboost import CatBoostClassifier
@@ -17,10 +14,6 @@ st.write('🔍 Анализ данных и предсказание отток�
 # Загрузка данных
 data = pd.read_csv('telecom_users.csv')
 
-# Обзор данных
-with st.expander('📊 Просмотр данных'):
-    st.write(data.head())
-
 # Обработка данных
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
@@ -30,21 +23,19 @@ label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilli
 ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
 target_cols = ['InternetService']
 
-# Используем LabelEncoder для категориальных признаков с бинарным кодированием
+# Применяем `fit` на всех данных для 'PhoneService', 'Contract', 'PaymentMethod'
 le = LabelEncoder()
 
-# Применяем `fit` на всех данных для 'PhoneService', 'Contract', 'PaymentMethod'
+# Преобразуем категориальные признаки
 data['PhoneService'] = le.fit_transform(data['PhoneService'])
 data['Contract'] = le.fit_transform(data['Contract'])
 data['PaymentMethod'] = le.fit_transform(data['PaymentMethod'])
+data['InternetService'] = le.fit_transform(data['InternetService'])
 
 # One-hot кодирование для переменных с несколькими категориями
 data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
 
-# Кодирование столбца InternetService с использованием TargetEncoder
-# Преобразуем категориальные признаки с помощью TargetEncoder (или LabelEncoder, если это необходимо)
-data['InternetService'] = le.fit_transform(data['InternetService'])
-
+# Преобразуем все данные в числовые
 data = data.apply(pd.to_numeric, errors='coerce')
 
 # Разделение данных
@@ -59,8 +50,11 @@ X = pd.DataFrame(X_scaled, columns=X.columns)
 # Разделение на тренировочные и тестовые данные
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Обучение модели
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, verbose=0)
+# Указываем категориальные признаки для CatBoost (если есть такие признаки)
+cat_features = ['PhoneService', 'Contract', 'PaymentMethod', 'InternetService']
+
+# Обучение модели CatBoost
+clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=cat_features, verbose=0)
 clf.fit(X_train, y_train)
 
 # Прогнозы
@@ -81,21 +75,11 @@ st.subheader('📌 Отчет по классификации')
 st.write(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
 
 # Визуализация корреляции
+import seaborn as sns
+import matplotlib.pyplot as plt
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
 st.pyplot(fig)
-
-# Гистограмма оттока клиентов
-fig1 = px.histogram(data, x='Churn', title='Распределение оттока клиентов')
-st.plotly_chart(fig1)
-
-# Важность признаков
-importances = clf.get_feature_importance()
-feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
-fig2 = plt.figure(figsize=(12, 6))
-sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
-plt.xticks(rotation=45)
-st.pyplot(fig2)
 
 # Форма для ввода данных
 with st.sidebar:
@@ -144,6 +128,7 @@ input_df = pd.DataFrame([input_data])
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
+input_df['InternetService'] = le.transform(input_df['InternetService'])
 
 # Масштабирование данных
 input_df_scaled = scaler.transform(input_df)
