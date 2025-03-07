@@ -126,14 +126,14 @@ input_data = {
 # Преобразование введенных данных в DataFrame
 input_df = pd.DataFrame([input_data])
 
-# Убедимся, что порядок столбцов совпадает с обучающим набором
-input_df = input_df[X.columns]
-
-# Преобразуем столбцы в нужные значения
+# Преобразуем введенные данные в нужный формат
 input_df['InternetService'] = le.transform(input_df['InternetService'])
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
+
+# One-hot кодирование для столбцов с несколькими категориями (обработанных через pd.get_dummies)
+input_df = pd.get_dummies(input_df, columns=ohe_cols, drop_first=True)
 
 # Применяем тот же масштабировщик, что и для обучающего набора
 input_df_scaled = scaler.transform(input_df)
