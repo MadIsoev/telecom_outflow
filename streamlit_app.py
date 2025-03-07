@@ -31,8 +31,7 @@ data['TotalCharges'] = data['TotalCharges'].fillna(data['TotalCharges'].median()
 
 # Проверка на наличие пустых значений в других столбцах перед масштабированием
 if data.isnull().sum().any():
-    st.write("В данных присутствуют пропущенные значения. Они будут заполнены.")
-    data = data.fillna(data.mode().iloc[0])  # Заполнение модой
+    st.write("В данных присутствуют пропущенные значения.")
 else:
     st.write("Пропущенные значения отсутствуют.")
 
@@ -63,30 +62,24 @@ X_scaled = scaler.fit_transform(data.drop(columns=['Churn']))
 X = pd.DataFrame(X_scaled, columns=data.drop(columns=['Churn']).columns) 
 y = data['Churn']
 
-# Определение категориальных признаков
-cat_features = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'InternetService']
+# Убедимся, что все категориальные признаки имеют тип 'category'
+cat_features = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'InternetService']  # Пример, замените на свои категориальные признаки
 
 # Преобразуем столбцы в категориальный тип
 for feature in cat_features:
-    X[feature] = X[feature].astype('category')
+    X[feature] = pd.Categorical(X[feature])
 
-# Проверка на пропущенные значения в категориальных признаках
+# Убедимся, что в категориальных признаках нет NaN
 if X[cat_features].isnull().sum().any():
-    st.write("В категориальных признаках присутствуют пропущенные значения. Они будут заполнены модой.")
-    for feature in cat_features:
-        X[feature] = X[feature].fillna(X[feature].mode()[0])
+    st.write("В категориальных признаках присутствуют пропущенные значения. Их необходимо обработать.")
+else:
+    st.write("Категориальные признаки готовы к обучению.")
 
 # Разделение на обучающую и тестовую выборки
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Проверка на пропущенные значения в обучающих данных
-if X_train.isnull().sum().any() or y_train.isnull().any():
-    st.write("В обучающих данных присутствуют пропущенные значения. Они будут заполнены.")
-    X_train = X_train.fillna(X_train.mode().iloc[0])
-    y_train = y_train.fillna(y_train.mode().iloc[0])
-
 # Обучение модели CatBoost
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=cat_features, verbose=0)
+clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=[X.columns.get_loc(c) for c in cat_features], verbose=0)
 clf.fit(X_train, y_train)
 
 # Прогнозирование
@@ -132,10 +125,10 @@ st.sidebar.header("🔧 Введите признаки клиента:")
 
 # Ввод данных нового клиента
 input_data = {
-    'age': st.sidebar.slider('Возраст', 18, 100, 30),
-    'TotalCharges': st.sidebar.slider('Общие расходы', 0, 10000, 1000),
-    'Tenure': st.sidebar.slider('Стаж (месяцы)', 1, 72, 12),
-    'MonthlyCharges': st.sidebar.slider('Ежемесячные расходы', 0, 200, 50),
+    'age': st.slider('Возраст', 18, 100, 30),
+    'TotalCharges': st.slider('Общие расходы', 0, 10000, 1000),
+    'Tenure': st.slider('Стаж (месяцы)', 1, 72, 12),
+    'MonthlyCharges': st.slider('Ежемесячные расходы', 0, 200, 50),
 }
 
 input_df = pd.DataFrame(input_data, index=[0])
