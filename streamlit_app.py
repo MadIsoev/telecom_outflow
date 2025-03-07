@@ -127,7 +127,7 @@ input_data = {
 input_df = pd.DataFrame([input_data])
 
 # Преобразуем введенные данные в нужный формат
-input_df['InternetService'] = le.transform(input_df['InternetService'])
+input_df['InternetService'] = te.transform(input_df['InternetService'])
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
