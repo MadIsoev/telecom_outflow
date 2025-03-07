@@ -31,6 +31,14 @@ with st.expander('📊 Обзор данных'):
     y_raw = data["Churn"].astype(int)
     st.dataframe(y_raw)
 
+# Проверка на пропущенные значения в целевой переменной 'Churn'
+if data['Churn'].isnull().sum() > 0:
+    st.warning("⚠️ В целевой переменной 'Churn' есть пропущенные значения.")
+    data['Churn'] = data['Churn'].fillna(data['Churn'].mode()[0])  # Заполнение пропущенных значений наиболее часто встречающимся значением
+
+# Преобразование 'Churn' в тип int
+data['Churn'] = data['Churn'].astype(int)
+
 with st.sidebar:
     st.header("🔧 Введите данные клиента:")
     age = st.slider('Возраст', float(data.age.min()), float(data.age.max()), float(data.age.mean()))
@@ -53,7 +61,7 @@ with st.expander('📥 Введенные данные'):
 # Обработка данных
 imputer = SimpleImputer(strategy="mean")
 X = pd.DataFrame(imputer.fit_transform(X_raw), columns=X_raw.columns)
-y = y_raw
+y = data["Churn"]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 scaler = StandardScaler()
@@ -101,4 +109,3 @@ sns.heatmap(data_numeric.corr(), annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
 st.pyplot(fig)
 
 st.write("💡 **Совет:** Используйте ползунки на боковой панели для ввода данных клиента и получения прогноза!")
-
