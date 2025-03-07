@@ -33,14 +33,12 @@ else:
 
 # Кодирование категориальных признаков
 label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
-ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
 target_cols = ['InternetService']
 
 le = LabelEncoder()
 for col in label_cols:
     data[col] = le.fit_transform(data[col])
 
-data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
 data[target_cols] = data[target_cols].astype(str)
 te = TargetEncoder(cols=target_cols)
 data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
@@ -61,6 +59,16 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, verbose=0)
 clf.fit(X_train, y_train)
 
+# Определение 5 топ-признаков
+importances = clf.get_feature_importance()
+feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
+top_features = feature_importances.head(5).index.tolist()
+X = X[top_features]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Повторное обучение модели с 5 топ-признаками
+clf.fit(X_train, y_train)
+
 y_pred = clf.predict(X_test)
 y_prob = clf.predict_proba(X_test)[:, 1]
 
@@ -75,24 +83,18 @@ st.subheader('📌 Отчет по классификации')
 st.write(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
 
 # Визуализация
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
-st.pyplot(fig)
-
 fig1 = px.histogram(data, x='Churn', title='Распределение оттока клиентов')
 st.plotly_chart(fig1)
 
-importances = clf.get_feature_importance()
-feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
 fig2 = plt.figure(figsize=(12, 6))
-sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
+sns.barplot(x=feature_importances.head(5).index, y=feature_importances.head(5).values, palette='viridis')
 plt.xticks(rotation=45)
 st.pyplot(fig2)
 
 # Форма для ввода данных
 st.sidebar.header("🔧 Введите данные клиента")
 input_data = {}
-for col in X.columns:
+for col in top_features:
     input_data[col] = st.sidebar.number_input(col, value=float(X[col].mean()))
 
 input_df = pd.DataFrame([input_data])
