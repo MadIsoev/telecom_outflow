@@ -53,6 +53,9 @@ data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
 te = TargetEncoder(cols=target_cols)
 data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
 
+# Преобразование всех данных в числовой формат
+data = data.apply(pd.to_numeric, errors='coerce')
+
 # Масштабирование данных
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(data.drop(columns=['Churn'])) 
@@ -125,5 +128,4 @@ else:
     st.success("Этот клиент, вероятно, останется в компании.")
 
 # Прогноз вероятности оттока
-input_proba = clf.predict_proba(input_scaled)[:, 1]
-st.write(f"Вероятность оттока для этого клиента: {input_proba[0]:.2f}")
+input_pro
