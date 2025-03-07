@@ -21,15 +21,6 @@ data = pd.read_csv('telecom_users.csv')
 # Обзор данных
 with st.expander('📊 Просмотр данных'):
     st.write(data.head())
-    
-# with st.expander('📊 Data Overview'):
-#    st.write("**Feature Matrix (X)**")
-#    X_raw = df.drop(columns=["Churn", "Unnamed: 0", "customerID"], errors='ignore')
-#    st.dataframe(X_raw)
-
-#    st.write("**Target Variable (y)**")
-#    y_raw = df["Churn"].astype(int)
-#    st.dataframe(y_raw)
 
 # Обработка данных
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
@@ -78,6 +69,25 @@ y_prob = clf.predict_proba(X_test)[:, 1]
 accuracy = accuracy_score(y_test, y_pred)
 roc_auc = roc_auc_score(y_test, y_prob)
 
+# Форма для ввода данных
+st.sidebar.header("🔧 Введите данные клиента")
+input_data = {}
+for col in X.columns:
+    input_data[col] = st.sidebar.number_input(col, value=float(X[col].mean()))
+
+input_df = pd.DataFrame([input_data])
+input_scaled = scaler.transform(input_df)
+input_prediction = clf.predict(input_scaled)
+input_proba = clf.predict_proba(input_scaled)[:, 1]
+
+# Результат предсказания на главной странице (перед "Результаты модели")
+st.subheader("📌 Результат предсказания")
+if input_prediction == 1:
+    st.error("Этот клиент, вероятно, уйдёт.")
+else:
+    st.success("Этот клиент, вероятно, останется.")
+st.write(f"🔍 Вероятность оттока: {input_proba[0]:.2f}")
+
 # Вывод результатов модели
 st.subheader('📊 Результаты модели')
 st.metric(label='Точность', value=f"{accuracy:.4f}")
@@ -103,22 +113,3 @@ fig2 = plt.figure(figsize=(12, 6))
 sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
 plt.xticks(rotation=45)
 st.pyplot(fig2)
-
-# Форма для ввода данных
-st.sidebar.header("🔧 Введите данные клиента")
-input_data = {}
-for col in X.columns:
-    input_data[col] = st.sidebar.number_input(col, value=float(X[col].mean()))
-
-input_df = pd.DataFrame([input_data])
-input_scaled = scaler.transform(input_df)
-input_prediction = clf.predict(input_scaled)
-input_proba = clf.predict_proba(input_scaled)[:, 1]
-
-st.sidebar.subheader("📌 Результат предсказания")
-if input_prediction == 1:
-    st.sidebar.error("Этот клиент, вероятно, уйдёт.")
-else:
-    st.sidebar.success("Этот клиент, вероятно, останется.")
-st.sidebar.write(f"🔍 Вероятность оттока: {input_proba[0]:.2f}")
-
