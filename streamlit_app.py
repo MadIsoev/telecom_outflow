@@ -62,7 +62,7 @@ cat_features = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBil
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=[] , verbose=0)
+clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=[], verbose=0)
 clf.fit(X_train, y_train)
 
 y_pred = clf.predict(X_test)
@@ -97,14 +97,12 @@ st.pyplot(fig2)
 
 st.sidebar.header("🔧 Введите признаки клиента:")
 
-input_data = {
-    'age': st.slider('Возраст', 18, 100, 30),
-    'TotalCharges': st.slider('Общие расходы', 0, 10000, 1000),
-    'Tenure': st.slider('Стаж (месяцы)', 1, 72, 12),
-    'MonthlyCharges': st.slider('Ежемесячные расходы', 0, 200, 50),
-}
+input_data = {col: st.number_input(col, value=float(X[col].mean())) for col in X.columns}
+input_df = pd.DataFrame([input_data])
 
-input_df = pd.DataFrame(input_data, index=[0])
+# Убедимся, что порядок и количество признаков совпадают
+input_df = input_df[X.columns]
+
 input_scaled = scaler.transform(input_df)
 input_prediction = clf.predict(input_scaled)
 
