@@ -1,10 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
+from category_encoders import TargetEncoder
 
 # Установка страницы
 st.set_page_config(page_title='Прогноз оттока клиентов', layout='wide')
@@ -14,34 +17,31 @@ st.write('🔍 Анализ данных и предсказание отток�
 # Загрузка данных
 data = pd.read_csv('telecom_users.csv')
 
+# Обзор данных
+with st.expander('📊 Просмотр данных'):
+    st.write(data.head())
+
 # Обработка данных
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
 
-# Категориальные признаки
-categorical_columns = ['PhoneService', 'Contract', 'PaymentMethod', 'InternetService']
-
 # Кодирование категориальных признаков
+label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
+ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
+target_cols = ['InternetService']
+
+# Используем LabelEncoder для категориальных признаков с бинарным кодированием
 le = LabelEncoder()
-
-# Словарь для хранения соответствий категорий и преобразования
-le_dict = {
-    'PhoneService': ['Yes', 'No'],
-    'Contract': ['Month-to-month', 'One year', 'Two year'],
-    'PaymentMethod': ['Bank transfer (automatic)', 'Credit card (automatic)', 'Electronic check', 'Mailed check'],
-    'InternetService': ['DSL', 'Fiber optic', 'No']
-}
-
-# Применяем LabelEncoder для категориальных признаков с фиксированными категориями
-for col in categorical_columns:
-    le.fit(le_dict[col])  # fit для каждой категории в словаре
-    data[col] = le.transform(data[col])
+for col in label_cols:
+    data[col] = le.fit_transform(data[col])
 
 # One-hot кодирование для переменных с несколькими категориями
-ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
 data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
 
-# Преобразуем все данные в числовые
+# Кодирование столбца InternetService с использованием TargetEncoder
+te = TargetEncoder(cols=target_cols)
+data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
+
 data = data.apply(pd.to_numeric, errors='coerce')
 
 # Разделение данных
@@ -56,16 +56,8 @@ X = pd.DataFrame(X_scaled, columns=X.columns)
 # Разделение на тренировочные и тестовые данные
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Указываем категориальные признаки для CatBoost
-cat_features = ['PhoneService', 'Contract', 'PaymentMethod', 'InternetService']
-
-# Проверка на наличие категориальных признаков в данных
-cat_feature_indices = [X.columns.get_loc(col) for col in cat_features if col in X.columns]
-if len(cat_feature_indices) != len(cat_features):
-    st.error("Некоторые категориальные признаки не найдены в данных!")
-
-# Обучение модели CatBoost
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=cat_feature_indices, verbose=0)
+# Обучение модели
+clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, verbose=0)
 clf.fit(X_train, y_train)
 
 # Прогнозы
@@ -86,11 +78,23 @@ st.subheader('📌 Отчет по классификации')
 st.write(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
 
 # Визуализация корреляции
-import seaborn as sns
-import matplotlib.pyplot as plt
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
 st.pyplot(fig)
+
+# Распределение оттока клиентов
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
+plt.title('Распределение оттока клиентов')
+st.pyplot(plt)
+
+# Важность признаков
+importances = clf.get_feature_importance()
+feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
+fig2 = plt.figure(figsize=(12, 6))
+sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
+plt.xticks(rotation=45)
+st.pyplot(fig2)
 
 # Форма для ввода данных
 with st.sidebar:
@@ -103,19 +107,23 @@ with st.sidebar:
     MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
     
     # Тип интернет-услуги (InternetService)
-    InternetService = st.selectbox('Тип интернет-услуги', le_dict['InternetService'], index=le_dict['InternetService'].index('DSL'))  # По умолчанию выбрано 'DSL'
+    InternetService_options = ['DSL', 'Fiber optic', 'No']
+    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=InternetService_options.index('DSL'))  # По умолчанию выбрано 'DSL'
     
     # Общая сумма (TotalCharges)
     TotalCharges = st.slider('Общая сумма', min_value=float(data['TotalCharges'].min()), max_value=float(data['TotalCharges'].max()), value=float(data['TotalCharges'].mean()))
     
     # Сервис (PhoneService)
-    PhoneService = st.selectbox('Сервис', le_dict['PhoneService'], index=le_dict['PhoneService'].index('Yes'))  # По умолчанию выбрано 'Yes'
+    PhoneService_options = ['Yes', 'No']
+    PhoneService = st.selectbox('Сервис', PhoneService_options, index=PhoneService_options.index('Yes'))  # По умолчанию выбрано 'Yes'
     
     # Тип контракта (Contract)
-    Contract = st.selectbox('Тип контракта', le_dict['Contract'], index=le_dict['Contract'].index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
+    Contract_options = ['Month-to-month', 'One year', 'Two year']
+    Contract = st.selectbox('Тип контракта', Contract_options, index=Contract_options.index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
     
     # Метод оплаты (PaymentMethod)
-    PaymentMethod = st.selectbox('Метод оплаты', le_dict['PaymentMethod'], index=le_dict['PaymentMethod'].index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
+    PaymentMethod_options = ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
+    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=PaymentMethod_options.index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
 
 # Прогнозирование для введенных данных
 input_data = {
@@ -131,13 +139,16 @@ input_data = {
 # Преобразование введенных данных в DataFrame
 input_df = pd.DataFrame([input_data])
 
-# Преобразуем категориальные признаки с помощью LabelEncoder
+# Убедимся, что порядок столбцов совпадает с обучающим набором
+input_df = input_df[X.columns]
+
+# Преобразуем столбцы в нужные значения
+input_df['InternetService'] = le.transform(input_df['InternetService'])
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
-input_df['InternetService'] = le.transform(input_df['InternetService'])
 
-# Масштабирование данных
+# Применяем тот же масштабировщик, что и для обучающего набора
 input_df_scaled = scaler.transform(input_df)
 
 # Прогноз
