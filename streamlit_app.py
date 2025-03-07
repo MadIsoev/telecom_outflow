@@ -70,13 +70,58 @@ accuracy = accuracy_score(y_test, y_pred)
 roc_auc = roc_auc_score(y_test, y_prob)
 
 # Форма для ввода данных
-st.sidebar.header("🔧 Введите данные клиента")
-input_data = {}
-for col in X.columns:
-    input_data[col] = st.sidebar.number_input(col, value=float(X[col].mean()))
+with st.sidebar:
+    st.header("🔧 Введите признаки: ")
+    
+    # Длительность обслуживания (tenure)
+    tenure = st.slider('Длительность обслуживания', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
+    
+    # Ежемесячные платежи (MonthlyCharges)
+    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
+    
+    # Тип интернет-услуги (InternetService)
+    InternetService_options = data['InternetService'].unique()
+    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=list(InternetService_options).index(data['InternetService'].mode()[0]))
+    
+    # Общая сумма (TotalCharges)
+    TotalCharges = st.slider('Общая сумма', min_value=float(data['TotalCharges'].min()), max_value=float(data['TotalCharges'].max()), value=float(data['TotalCharges'].mean()))
+    
+    # Сервис (PhoneService)
+    PhoneService_options = ['Yes', 'No']
+    PhoneService = st.selectbox('Сервис', PhoneService_options, index=PhoneService_options.index(data['PhoneService'].mode()[0]))
+    
+    # Тип контракта (Contract)
+    Contract_options = data['Contract'].unique()
+    Contract = st.selectbox('Тип контракта', Contract_options, index=list(Contract_options).index(data['Contract'].mode()[0]))
+    
+    # Метод оплаты (PaymentMethod)
+    PaymentMethod_options = data['PaymentMethod'].unique()
+    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=list(PaymentMethod_options).index(data['PaymentMethod'].mode()[0]))
 
+# Подготовка данных для предсказания
+input_data = {
+    'tenure': tenure,
+    'MonthlyCharges': MonthlyCharges,
+    'InternetService': InternetService,
+    'TotalCharges': TotalCharges,
+    'PhoneService': PhoneService,
+    'Contract': Contract,
+    'PaymentMethod': PaymentMethod
+}
+
+# Преобразование в DataFrame
 input_df = pd.DataFrame([input_data])
+
+# Преобразование категориальных признаков с помощью LabelEncoder и TargetEncoder
+input_df['PhoneService'] = le.transform(input_df['PhoneService'])
+input_df['InternetService'] = te.transform(input_df['InternetService'], input_df['Churn'])
+input_df['Contract'] = le.transform(input_df['Contract'])
+input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
+
+# Масштабирование данных
 input_scaled = scaler.transform(input_df)
+
+# Прогнозирование
 input_prediction = clf.predict(input_scaled)
 input_proba = clf.predict_proba(input_scaled)[:, 1]
 
@@ -87,13 +132,6 @@ if input_prediction == 1:
 else:
     st.success("Этот клиент, вероятно, останется.")
 st.write(f"🔍 Вероятность оттока: {input_proba[0]:.2f}")
-
-# Распределение целевого признака
-plt.figure(figsize=(6, 4))
-sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
-plt.title('Распределение оттока клиентов (0 - останется, 1 - уйдёт)')
-st.pyplot(plt)
-
 
 # Вывод результатов модели
 st.subheader('📊 Результаты модели')
@@ -121,3 +159,8 @@ sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='
 plt.xticks(rotation=45)
 st.pyplot(fig2)
 
+# Распределение целевого признака
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
+plt.title('Распределение оттока клиентов (0 - останется, 1 - уйдёт)')
+st.pyplot(plt)
