@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 from category_encoders import TargetEncoder
@@ -141,7 +141,7 @@ input_df = pd.DataFrame([input_data])
 # Порядок столбцов, который использовался для обучения модели
 input_df = input_df[['tenure', 'MonthlyCharges', 'InternetService', 'TotalCharges', 'PhoneService', 'Contract', 'PaymentMethod']]
 
-# Преобразуем категориальные признаки с помощью LabelEncoder (кроме 'InternetService')
+# Преобразуем категориальные признаки с помощью LabelEncoder
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
