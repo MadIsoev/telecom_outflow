@@ -74,4 +74,11 @@ with st.sidebar:
     st.header("🔧 Введите признаки: ")
     
     # Длительность обслуживания (tenure)
-    tenure = st.slider('Длительность обслуживания', min_value=int(data['tenure'].min()), max_value=int(data[
+    tenure = st.slider('Длительность обслуживания', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
+    
+    # Ежемесячные платежи (MonthlyCharges)
+    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
+    
+    # Тип интернет-услуги (InternetService)
+    InternetService_options = data['InternetService'].unique()
+    InternetService = 
