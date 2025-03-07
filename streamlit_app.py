@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
-from category_encoders import TargetEncoder
 
 # Установка страницы
 st.set_page_config(page_title='Прогноз оттока клиентов', layout='wide')
@@ -33,15 +32,18 @@ target_cols = ['InternetService']
 
 # Используем LabelEncoder для категориальных признаков с бинарным кодированием
 le = LabelEncoder()
-for col in label_cols:
-    data[col] = le.fit_transform(data[col])
+
+# Применяем `fit` на всех данных для 'PhoneService', 'Contract', 'PaymentMethod'
+data['PhoneService'] = le.fit_transform(data['PhoneService'])
+data['Contract'] = le.fit_transform(data['Contract'])
+data['PaymentMethod'] = le.fit_transform(data['PaymentMethod'])
 
 # One-hot кодирование для переменных с несколькими категориями
 data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
 
 # Кодирование столбца InternetService с использованием TargetEncoder
-te = TargetEncoder(cols=target_cols)
-data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
+# Преобразуем категориальные признаки с помощью TargetEncoder (или LabelEncoder, если это необходимо)
+data['InternetService'] = le.fit_transform(data['InternetService'])
 
 data = data.apply(pd.to_numeric, errors='coerce')
 
@@ -137,9 +139,6 @@ input_data = {
 
 # Преобразование введенных данных в DataFrame
 input_df = pd.DataFrame([input_data])
-
-# Порядок столбцов, который использовался для обучения модели
-input_df = input_df[['tenure', 'MonthlyCharges', 'InternetService', 'TotalCharges', 'PhoneService', 'Contract', 'PaymentMethod']]
 
 # Преобразуем категориальные признаки с помощью LabelEncoder
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
