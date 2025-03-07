@@ -77,24 +77,11 @@ st.metric(label='ROC AUC', value=f"{roc_auc:.4f}")
 st.subheader('📌 Отчет по классификации')
 st.write(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
 
-# Визуализация корреляции
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
-st.pyplot(fig)
-
 # Распределение оттока клиентов
 plt.figure(figsize=(6, 4))
 sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
 plt.title('Распределение оттока клиентов')
 st.pyplot(plt)
-
-# Важность признаков
-importances = clf.get_feature_importance()
-feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
-fig2 = plt.figure(figsize=(12, 6))
-sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
-plt.xticks(rotation=45)
-st.pyplot(fig2)
 
 # Форма для ввода данных
 with st.sidebar:
