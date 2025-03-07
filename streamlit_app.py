@@ -19,13 +19,13 @@ st.write('🔍 Анализ данных и предсказание отток�
 data = pd.read_csv('telecom_users.csv')
 
 # Обзор данных
-# with st.expander('📊 Просмотр данных'):
-#    st.write(data.head())
+with st.expander('📊 Просмотр данных'):
+    st.write(data.head())
     
-with st.expander('📊 Data Overview'):
-    st.write("**Feature Matrix (X)**")
-    X_raw = df.drop(columns=["Churn", "Unnamed: 0", "customerID"], errors='ignore')
-    st.dataframe(X_raw)
+# with st.expander('📊 Data Overview'):
+#    st.write("**Feature Matrix (X)**")
+#    X_raw = df.drop(columns=["Churn", "Unnamed: 0", "customerID"], errors='ignore')
+#    st.dataframe(X_raw)
 
     st.write("**Target Variable (y)**")
     y_raw = df["Churn"].astype(int)
