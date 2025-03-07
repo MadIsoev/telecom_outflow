@@ -62,8 +62,11 @@ X_scaled = scaler.fit_transform(data.drop(columns=['Churn']))
 X = pd.DataFrame(X_scaled, columns=data.drop(columns=['Churn']).columns) 
 y = data['Churn']
 
-# Убедитесь, что категориальные признаки правильно идентифицированы
-cat_features = [X.columns.get_loc(col) for col in target_cols if col in X.columns]
+# Преобразуем категориальные признаки в тип 'category'
+cat_features = ['InternetService']  # Пример, замените на свои категориальные признаки
+
+for feature in cat_features:
+    X[feature] = X[feature].astype('category')
 
 # Разделение на обучающую и тестовую выборки
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
