@@ -117,5 +117,5 @@ st.pyplot(fig2)
 # Распределение целевого признака
 plt.figure(figsize=(6, 4))
 sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
-plt.title('Распределение оттока клиентов')
+plt.title('Распределение оттока клиентов (0 - останется, 1 - уйдёт)')
 st.pyplot(plt)
