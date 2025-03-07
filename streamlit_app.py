@@ -65,8 +65,13 @@ y = data['Churn']
 # Преобразуем категориальные признаки в тип 'category'
 cat_features = ['InternetService']  # Пример, замените на свои категориальные признаки
 
+# Преобразуем столбцы в категориальный тип
 for feature in cat_features:
     X[feature] = X[feature].astype('category')
+
+# Проверка на пропущенные значения в категориальных признаках
+if X[cat_features].isnull().sum().any():
+    st.write("В категориальных признаках присутствуют пропущенные значения. Они должны быть обработаны.")
 
 # Разделение на обучающую и тестовую выборки
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
