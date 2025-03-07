@@ -113,3 +113,9 @@ fig2 = plt.figure(figsize=(12, 6))
 sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
 plt.xticks(rotation=45)
 st.pyplot(fig2)
+
+# Распределение целевого признака
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
+plt.title('Распределение оттока клиентов')
+st.pyplot(plt)
