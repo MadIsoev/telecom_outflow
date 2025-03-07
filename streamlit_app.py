@@ -29,6 +29,12 @@ data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 # Заполнение пропущенных значений медианой
 data['TotalCharges'] = data['TotalCharges'].fillna(data['TotalCharges'].median())
 
+# Проверка на наличие пустых значений в других столбцах перед масштабированием
+if data.isnull().sum().any():
+    st.write("В данных присутствуют пропущенные значения.")
+else:
+    st.write("Пропущенные значения отсутствуют.")
+
 # Кодирование категориальных признаков
 label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
 ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 
