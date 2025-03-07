@@ -10,12 +10,17 @@ from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 from category_encoders import TargetEncoder
 
+# Установка страницы
 st.set_page_config(page_title='Прогноз оттока клиентов', layout='wide')
 st.title('📊 Прогнозирование оттока клиентов')
 st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
 
 # Загрузка данных
-data = pd.read_csv('telecom_users.csv')
+try:
+    data = pd.read_csv('telecom_users.csv')
+    st.success("✅ Данные успешно загружены!")
+except Exception as e:
+    st.error(f"⚠️ Ошибка загрузки данных: {e}")
 
 # Обзор данных
 with st.expander('📊 Просмотр данных'):
@@ -36,12 +41,15 @@ label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilli
 ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
 target_cols = ['InternetService']
 
+# Используем LabelEncoder для категориальных признаков с бинарным кодированием
 le = LabelEncoder()
 for col in label_cols:
     data[col] = le.fit_transform(data[col])
 
+# One-hot кодирование для переменных с несколькими категориями
 data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
-data[target_cols] = data[target_cols].astype(str)
+
+# Кодирование столбца InternetService с использованием TargetEncoder
 te = TargetEncoder(cols=target_cols)
 data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
 
@@ -51,37 +59,45 @@ data = data.apply(pd.to_numeric, errors='coerce')
 X = data.drop(columns=['Churn'])
 y = data['Churn']
 
+# Масштабирование данных
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 X = pd.DataFrame(X_scaled, columns=X.columns)
 
+# Разделение на тренировочные и тестовые данные
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Обучение модели
 clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, verbose=0)
 clf.fit(X_train, y_train)
 
+# Прогнозы
 y_pred = clf.predict(X_test)
 y_prob = clf.predict_proba(X_test)[:, 1]
 
+# Оценка модели
 accuracy = accuracy_score(y_test, y_pred)
 roc_auc = roc_auc_score(y_test, y_prob)
 
+# Вывод результатов модели
 st.subheader('📊 Результаты модели')
 st.metric(label='Точность', value=f"{accuracy:.4f}")
 st.metric(label='ROC AUC', value=f"{roc_auc:.4f}")
 
+# Отчет по классификации
 st.subheader('📌 Отчет по классификации')
 st.write(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
 
-# Визуализация
+# Визуализация корреляции
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
 st.pyplot(fig)
 
+# Гистограмма оттока клиентов
 fig1 = px.histogram(data, x='Churn', title='Распределение оттока клиентов')
 st.plotly_chart(fig1)
 
+# Важность признаков
 importances = clf.get_feature_importance()
 feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
 fig2 = plt.figure(figsize=(12, 6))
@@ -106,3 +122,4 @@ if input_prediction == 1:
 else:
     st.sidebar.success("Этот клиент, вероятно, останется.")
 st.sidebar.write(f"🔍 Вероятность оттока: {input_proba[0]:.2f}")
+
