@@ -53,8 +53,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Указываем категориальные признаки для CatBoost (если есть такие признаки)
 cat_features = ['PhoneService', 'Contract', 'PaymentMethod', 'InternetService']
 
-# Убедимся, что категориальные признаки существуют в данных
-cat_feature_indices = [X.columns.get_loc(col) for col in cat_features]
+# Проверка на наличие категориальных признаков в данных
+cat_feature_indices = [X.columns.get_loc(col) for col in cat_features if col in X.columns]
+if len(cat_feature_indices) != len(cat_features):
+    st.error("Некоторые категориальные признаки не найдены в данных!")
 
 # Обучение модели CatBoost
 clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=cat_feature_indices, verbose=0)
