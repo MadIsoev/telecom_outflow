@@ -23,7 +23,10 @@ with st.expander('📊 Обзор данных'):
     st.dataframe(data.head())
 
 # Предварительная обработка данных
-data['TotalCharges'] = data['TotalCharges'].replace(' ', np.nan).astype(float)
+# Преобразуем 'TotalCharges' в числовой формат, заменяя ошибки на NaN
+data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
+
+# Заполнение пропущенных значений медианой
 data['TotalCharges'] = data['TotalCharges'].fillna(data['TotalCharges'].median())
 
 # Кодирование категориальных признаков
