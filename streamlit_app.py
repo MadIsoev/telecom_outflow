@@ -25,12 +25,6 @@ with st.expander('📊 Просмотр данных'):
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
 
-# Проверка на пропущенные значения
-if data.isnull().sum().any():
-    st.warning("⚠️ В данных есть пропущенные значения.")
-else:
-    st.success("✅ Пропущенные значения отсутствуют.")
-
 # Кодирование категориальных признаков
 label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
 target_cols = ['InternetService']
