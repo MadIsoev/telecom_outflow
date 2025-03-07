@@ -27,9 +27,9 @@ with st.expander('📊 Просмотр данных'):
 #    X_raw = df.drop(columns=["Churn", "Unnamed: 0", "customerID"], errors='ignore')
 #    st.dataframe(X_raw)
 
-    st.write("**Target Variable (y)**")
-    y_raw = df["Churn"].astype(int)
-    st.dataframe(y_raw)
+#    st.write("**Target Variable (y)**")
+#    y_raw = df["Churn"].astype(int)
+#    st.dataframe(y_raw)
 
 # Обработка данных
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
