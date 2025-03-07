@@ -141,8 +141,7 @@ input_df = pd.DataFrame([input_data])
 # Порядок столбцов, который использовался для обучения модели
 input_df = input_df[['tenure', 'MonthlyCharges', 'InternetService', 'TotalCharges', 'PhoneService', 'Contract', 'PaymentMethod']]
 
-# Преобразуем категориальные признаки с помощью LabelEncoder
-input_df['InternetService'] = le.transform(input_df['InternetService'])
+# Преобразуем категориальные признаки с помощью LabelEncoder (кроме 'InternetService')
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
