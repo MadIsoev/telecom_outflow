@@ -63,7 +63,7 @@ X = pd.DataFrame(X_scaled, columns=data.drop(columns=['Churn']).columns)
 y = data['Churn']
 
 # Преобразуем категориальные признаки в тип 'category'
-cat_features = ['InternetService']  # Пример, замените на свои категориальные признаки
+cat_features = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'InternetService']  # Пример, замените на свои категориальные признаки
 
 # Преобразуем столбцы в категориальный тип
 for feature in cat_features:
