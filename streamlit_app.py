@@ -16,25 +16,24 @@ st.title('📊 Прогнозирование оттока клиентов')
 st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
 
 # Загрузка данных
-try:
-    data = pd.read_csv('telecom_users.csv')
-    st.success("✅ Данные успешно загружены!")
-except Exception as e:
-    st.error(f"⚠️ Ошибка загрузки данных: {e}")
+data = pd.read_csv('telecom_users.csv')
 
 # Обзор данных
-with st.expander('📊 Просмотр данных'):
-    st.write(data.head())
+# with st.expander('📊 Просмотр данных'):
+#    st.write(data.head())
+    
+with st.expander('📊 Data Overview'):
+    st.write("**Feature Matrix (X)**")
+    X_raw = df.drop(columns=["still-alive", "name", "group"], errors='ignore')
+    st.dataframe(X_raw)
+    
+    st.write("**Target Variable (y)**")
+    y_raw = df["Churn"].astype(int)
+    st.dataframe(y_raw)
 
 # Обработка данных
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
-
-# Проверка на пропущенные значения
-if data.isnull().sum().any():
-    st.warning("⚠️ В данных есть пропущенные значения.")
-else:
-    st.success("✅ Пропущенные значения отсутствуют.")
 
 # Кодирование категориальных признаков
 label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
