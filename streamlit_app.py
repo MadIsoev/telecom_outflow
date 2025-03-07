@@ -62,11 +62,14 @@ X_scaled = scaler.fit_transform(data.drop(columns=['Churn']))
 X = pd.DataFrame(X_scaled, columns=data.drop(columns=['Churn']).columns) 
 y = data['Churn']
 
+# Убедитесь, что категориальные признаки правильно идентифицированы
+cat_features = [X.columns.get_loc(col) for col in target_cols if col in X.columns]
+
 # Разделение на обучающую и тестовую выборки
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Обучение модели CatBoost
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=[data.columns.get_loc(col) for col in target_cols], verbose=0)
+clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=cat_features, verbose=0)
 clf.fit(X_train, y_train)
 
 # Прогнозирование
@@ -128,4 +131,5 @@ else:
     st.success("Этот клиент, вероятно, останется в компании.")
 
 # Прогноз вероятности оттока
-input_pro
+input_proba = clf.predict_proba(input_scaled)[:, 1]
+st.write(f"Вероятность оттока для этого клиента: {input_proba[0]:.2f}")
