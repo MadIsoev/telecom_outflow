@@ -141,11 +141,6 @@ input_df = pd.DataFrame([input_data])
 # Порядок столбцов, который использовался для обучения модели
 input_df = input_df[['tenure', 'MonthlyCharges', 'InternetService', 'TotalCharges', 'PhoneService', 'Contract', 'PaymentMethod']]
 
-# Убедитесь, что все столбцы присутствуют в данных
-missing_cols = set(X.columns) - set(input_df.columns)
-for col in missing_cols:
-    input_df[col] = 0  # Заполняем недостающие столбцы значением 0
-
 # Преобразуем категориальные признаки с помощью LabelEncoder
 input_df['InternetService'] = le.transform(input_df['InternetService'])
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
