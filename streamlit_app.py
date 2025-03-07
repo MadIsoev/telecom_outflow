@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from catboost import CatBoostClassifier
@@ -82,11 +83,9 @@ fig, ax = plt.subplots(figsize=(10, 6))
 sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
 st.pyplot(fig)
 
-# Распределение оттока клиентов
-plt.figure(figsize=(6, 4))
-sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
-plt.title('Распределение оттока клиентов')
-st.pyplot(plt)
+# Гистограмма оттока клиентов
+fig1 = px.histogram(data, x='Churn', title='Распределение оттока клиентов')
+st.plotly_chart(fig1)
 
 # Важность признаков
 importances = clf.get_feature_importance()
@@ -139,16 +138,21 @@ input_data = {
 # Преобразование введенных данных в DataFrame
 input_df = pd.DataFrame([input_data])
 
-# Убедимся, что порядок столбцов совпадает с обучающим набором
-input_df = input_df[X.columns]
+# Порядок столбцов, который использовался для обучения модели
+input_df = input_df[['tenure', 'MonthlyCharges', 'InternetService', 'TotalCharges', 'PhoneService', 'Contract', 'PaymentMethod']]
 
-# Преобразуем столбцы в нужные значения
+# Убедитесь, что все столбцы присутствуют в данных
+missing_cols = set(X.columns) - set(input_df.columns)
+for col in missing_cols:
+    input_df[col] = 0  # Заполняем недостающие столбцы значением 0
+
+# Преобразуем категориальные признаки с помощью LabelEncoder
 input_df['InternetService'] = le.transform(input_df['InternetService'])
 input_df['PhoneService'] = le.transform(input_df['PhoneService'])
 input_df['Contract'] = le.transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
 
-# Применяем тот же масштабировщик, что и для обучающего набора
+# Масштабирование данных
 input_df_scaled = scaler.transform(input_df)
 
 # Прогноз
