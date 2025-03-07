@@ -140,18 +140,18 @@ input_data = {
 # Преобразование введенных данных в DataFrame
 input_df = pd.DataFrame([input_data])
 
-# Кодирование признаков
+# Преобразуем столбцы в нужные значения
 input_df['InternetService'] = le.fit_transform(input_df['InternetService'])
 input_df['PhoneService'] = le.fit_transform(input_df['PhoneService'])
 input_df['Contract'] = le.fit_transform(input_df['Contract'])
 input_df['PaymentMethod'] = le.fit_transform(input_df['PaymentMethod'])
 
-# Масштабирование введенных данных
-input_scaled = scaler.transform(input_df)
+# Применяем тот же масштабировщик, что и для обучающего набора
+input_df_scaled = scaler.transform(input_df)
 
 # Прогноз
-input_prediction = clf.predict(input_scaled)
-input_proba = clf.predict_proba(input_scaled)[:, 1]
+input_prediction = clf.predict(input_df_scaled)
+input_proba = clf.predict_proba(input_df_scaled)[:, 1]
 
 # Результат предсказания
 st.subheader("📌 Результат предсказания")
