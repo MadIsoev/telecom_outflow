@@ -21,7 +21,7 @@ data = pd.read_csv('telecom_users.csv')
 # Обзор данных
 with st.expander('📊 Просмотр данных'):
     st.write(data.head())
-    
+
 # Обработка данных
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
@@ -119,12 +119,12 @@ with st.sidebar:
     PhoneService = st.selectbox('Сервис', PhoneService_options, index=PhoneService_options.index('Yes'))  # По умолчанию выбрано 'Yes'
     
     # Тип контракта (Contract)
-    Contract_options = data['Contract'].unique()
-    Contract = st.selectbox('Тип контракта', Contract_options, index=list(Contract_options).index(data['Contract'].mode()[0]))
+    Contract_options = ['Month-to-month', 'One year', 'Two year']
+    Contract = st.selectbox('Тип контракта', Contract_options, index=Contract_options.index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
     
     # Метод оплаты (PaymentMethod)
-    PaymentMethod_options = data['PaymentMethod'].unique()
-    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=list(PaymentMethod_options).index(data['PaymentMethod'].mode()[0]))
+    PaymentMethod_options = ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
+    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=PaymentMethod_options.index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
 
 # Прогнозирование для введенных данных
 input_data = {
