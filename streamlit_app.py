@@ -18,21 +18,27 @@ data = pd.read_csv('telecom_users.csv')
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
 
-# Кодирование категориальных признаков
-label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
-ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
-target_cols = ['InternetService']
+# Категориальные признаки
+categorical_columns = ['PhoneService', 'Contract', 'PaymentMethod', 'InternetService']
 
-# Применяем `fit` на всех данных для 'PhoneService', 'Contract', 'PaymentMethod'
+# Кодирование категориальных признаков
 le = LabelEncoder()
 
-# Преобразуем категориальные признаки
-data['PhoneService'] = le.fit_transform(data['PhoneService'])
-data['Contract'] = le.fit_transform(data['Contract'])
-data['PaymentMethod'] = le.fit_transform(data['PaymentMethod'])
-data['InternetService'] = le.fit_transform(data['InternetService'])
+# Словарь для хранения соответствий категорий и преобразования
+le_dict = {
+    'PhoneService': ['Yes', 'No'],
+    'Contract': ['Month-to-month', 'One year', 'Two year'],
+    'PaymentMethod': ['Bank transfer (automatic)', 'Credit card (automatic)', 'Electronic check', 'Mailed check'],
+    'InternetService': ['DSL', 'Fiber optic', 'No']
+}
+
+# Применяем LabelEncoder для категориальных признаков с фиксированными категориями
+for col in categorical_columns:
+    le.fit(le_dict[col])  # fit для каждой категории в словаре
+    data[col] = le.transform(data[col])
 
 # One-hot кодирование для переменных с несколькими категориями
+ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
 data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
 
 # Преобразуем все данные в числовые
@@ -50,7 +56,7 @@ X = pd.DataFrame(X_scaled, columns=X.columns)
 # Разделение на тренировочные и тестовые данные
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Указываем категориальные признаки для CatBoost (если есть такие признаки)
+# Указываем категориальные признаки для CatBoost
 cat_features = ['PhoneService', 'Contract', 'PaymentMethod', 'InternetService']
 
 # Проверка на наличие категориальных признаков в данных
@@ -97,23 +103,19 @@ with st.sidebar:
     MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
     
     # Тип интернет-услуги (InternetService)
-    InternetService_options = ['DSL', 'Fiber optic', 'No']
-    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=InternetService_options.index('DSL'))  # По умолчанию выбрано 'DSL'
+    InternetService = st.selectbox('Тип интернет-услуги', le_dict['InternetService'], index=le_dict['InternetService'].index('DSL'))  # По умолчанию выбрано 'DSL'
     
     # Общая сумма (TotalCharges)
     TotalCharges = st.slider('Общая сумма', min_value=float(data['TotalCharges'].min()), max_value=float(data['TotalCharges'].max()), value=float(data['TotalCharges'].mean()))
     
     # Сервис (PhoneService)
-    PhoneService_options = ['Yes', 'No']
-    PhoneService = st.selectbox('Сервис', PhoneService_options, index=PhoneService_options.index('Yes'))  # По умолчанию выбрано 'Yes'
+    PhoneService = st.selectbox('Сервис', le_dict['PhoneService'], index=le_dict['PhoneService'].index('Yes'))  # По умолчанию выбрано 'Yes'
     
     # Тип контракта (Contract)
-    Contract_options = ['Month-to-month', 'One year', 'Two year']
-    Contract = st.selectbox('Тип контракта', Contract_options, index=Contract_options.index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
+    Contract = st.selectbox('Тип контракта', le_dict['Contract'], index=le_dict['Contract'].index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
     
     # Метод оплаты (PaymentMethod)
-    PaymentMethod_options = ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
-    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=PaymentMethod_options.index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
+    PaymentMethod = st.selectbox('Метод оплаты', le_dict['PaymentMethod'], index=le_dict['PaymentMethod'].index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
 
 # Прогнозирование для введенных данных
 input_data = {
