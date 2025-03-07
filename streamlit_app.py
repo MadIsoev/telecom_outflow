@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly.express as px
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from catboost import CatBoostClassifier
@@ -140,11 +139,14 @@ input_data = {
 # Преобразование введенных данных в DataFrame
 input_df = pd.DataFrame([input_data])
 
+# Убедимся, что порядок столбцов совпадает с обучающим набором
+input_df = input_df[X.columns]
+
 # Преобразуем столбцы в нужные значения
-input_df['InternetService'] = le.fit_transform(input_df['InternetService'])
-input_df['PhoneService'] = le.fit_transform(input_df['PhoneService'])
-input_df['Contract'] = le.fit_transform(input_df['Contract'])
-input_df['PaymentMethod'] = le.fit_transform(input_df['PaymentMethod'])
+input_df['InternetService'] = le.transform(input_df['InternetService'])
+input_df['PhoneService'] = le.transform(input_df['PhoneService'])
+input_df['Contract'] = le.transform(input_df['Contract'])
+input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
 
 # Применяем тот же масштабировщик, что и для обучающего набора
 input_df_scaled = scaler.transform(input_df)
