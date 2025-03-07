@@ -1,127 +1,49 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from catboost import CatBoostClassifier
-from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
-from category_encoders import TargetEncoder
 
-st.title('📊 Прогнозирование оттока клиентов')
-
-st.write('Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
-
-# Загрузка данных
+# Загружаем данные
 data = pd.read_csv('telecom_users.csv')
 
-# Показать обзор данных
-with st.expander('📊 Обзор данных'):
-    st.write("**Данные**")
-    st.dataframe(data.head())
-
-# Предварительная обработка данных
-# Преобразуем 'TotalCharges' в числовой формат, заменяя ошибки на NaN
-data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
-
-# Заполнение пропущенных значений медианой
-data['TotalCharges'] = data['TotalCharges'].fillna(data['TotalCharges'].median())
-
-# Проверка на наличие пустых значений в других столбцах перед масштабированием
-if data.isnull().sum().any():
-    st.write("В данных присутствуют пропущенные значения.")
-else:
-    st.write("Пропущенные значения отсутствуют.")
+# Покажем первые строки данных
+st.title('Прогнозирование оттока клиентов')
+st.write('Данные о клиентах:')
+st.dataframe(data.head())
 
 # Кодирование категориальных признаков
-label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
-ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 
-            'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
-target_cols = ['InternetService']
-
-# Label Encoding
 le = LabelEncoder()
-for col in label_cols:
-    data[col] = le.fit_transform(data[col])
+data['gender'] = le.fit_transform(data['gender'])
+data['Partner'] = le.fit_transform(data['Partner'])
+data['Dependents'] = le.fit_transform(data['Dependents'])
+data['PhoneService'] = le.fit_transform(data['PhoneService'])
+data['PaperlessBilling'] = le.fit_transform(data['PaperlessBilling'])
+data['Churn'] = le.fit_transform(data['Churn'])
 
-# One-Hot Encoding
-data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
-
-# Target Encoding
-te = TargetEncoder(cols=target_cols)
-data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
-
-# Преобразование всех данных в числовой формат
-data = data.apply(pd.to_numeric, errors='coerce')
-
-# Масштабирование данных
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(data.drop(columns=['Churn'])) 
-X = pd.DataFrame(X_scaled, columns=data.drop(columns=['Churn']).columns) 
+# Разделяем данные на признаки и целевую переменную
+X = data.drop(columns=['Churn'])
 y = data['Churn']
 
-# Убедимся, что все категориальные признаки имеют тип 'category'
-cat_features = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'InternetService']  # Пример, замените на свои категориальные признаки
+# Указываем индексы категориальных признаков (если они имеются в DataFrame)
+cat_features = [0, 1, 2, 3, 4]  # Индексы категориальных признаков в X
 
-# Преобразуем столбцы в категориальный тип
-for feature in cat_features:
-    X[feature] = pd.Categorical(X[feature])
-
-# Убедимся, что в категориальных признаках нет NaN
-if X[cat_features].isnull().sum().any():
-    st.write("В категориальных признаках присутствуют пропущенные значения. Их необходимо обработать.")
-else:
-    st.write("Категориальные признаки готовы к обучению.")
-
-# Разделение на обучающую и тестовую выборки
+# Разделяем данные на обучающую и тестовую выборки
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Обучение модели CatBoost
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, cat_features=[X.columns.get_loc(c) for c in cat_features], verbose=0)
+# Обучаем модель CatBoost
+clf = CatBoostClassifier(iterations=1000, learning_rate=0.1, depth=6, cat_features=cat_features, verbose=200)
 clf.fit(X_train, y_train)
 
 # Прогнозирование
 y_pred = clf.predict(X_test)
-y_prob = clf.predict_proba(X_test)[:, 1]
 
 # Оценка модели
-accuracy = accuracy_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_prob)
-st.subheader('🔮 Результаты предсказания')
+accuracy = (y_pred == y_test).mean()
 st.write(f"Точность модели: {accuracy:.4f}")
-st.write(f"ROC AUC: {roc_auc:.4f}")
 
-# Отображение отчета по классификации
-report = classification_report(y_test, y_pred, output_dict=True)
-st.subheader("📊 Отчет по классификации")
-st.write(pd.DataFrame(report).transpose())
-
-# Визуализация ROC-кривой
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(data.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
-plt.title('Корреляционная матрица')
-st.pyplot(fig)
-
-# Визуализация результатов
-st.subheader('📊 Визуализация результатов')
-
-# Гистограмма распределения оттока
-fig1 = px.histogram(data, x="Churn", title="Распределение оттока клиентов")
-st.plotly_chart(fig1)
-
-# Важность признаков
-importances = clf.get_feature_importance()
-feature_importances = pd.Series(importances, index=X.columns).sort_values(ascending=False)
-fig2 = plt.figure(figsize=(12, 6))
-sns.barplot(x=feature_importances.index, y=feature_importances.values, palette='viridis')
-plt.title('Важность признаков')
-plt.xticks(rotation=45)
-st.pyplot(fig2)
-
-# Предсказание для нового клиента
-st.sidebar.header("🔧 Введите признаки клиента:")
+# Прогнозирование для нового клиента
+st.sidebar.header("Ввод данных нового клиента")
 
 # Ввод данных нового клиента
 input_data = {
@@ -132,14 +54,10 @@ input_data = {
 }
 
 input_df = pd.DataFrame(input_data, index=[0])
-input_scaled = scaler.transform(input_df)
-input_prediction = clf.predict(input_scaled)
+input_prediction = clf.predict(input_df)
 
 if input_prediction == 1:
     st.success("Этот клиент, вероятно, уйдет из компании (отток).")
 else:
     st.success("Этот клиент, вероятно, останется в компании.")
 
-# Прогноз вероятности оттока
-input_proba = clf.predict_proba(input_scaled)[:, 1]
-st.write(f"Вероятность оттока для этого клиента: {input_proba[0]:.2f}")
