@@ -196,8 +196,3 @@ plt.xlabel("Предсказанный")
 plt.ylabel("Истинный")
 st.pyplot(plt)
 
-#  Детальная оценка
-st.subheader('Детальная оценка модели')
-st.text(classification_report(y_test, y_pred))
-
-
