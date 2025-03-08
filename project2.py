@@ -99,25 +99,12 @@ prediction_prob = model.predict_proba(input_data_scaled)
 # Отладочный вывод
 st.write(f"Размерность вероятностей: {prediction_prob.shape}")
 
-# Проверка на правильность
-if prediction_prob.shape[1] == 2:
-    # Вероятность оттока
-    probability_of_churn = prediction_prob[0][1]
-else:
-    probability_of_churn = None  # Если вероятности оттока нет, то присваиваем None
-
 # Отображение результата
 st.subheader("📌 Результат предсказания")
 if prediction == 1:
     st.error("Этот клиент, вероятно, уйдёт.")
 else:
     st.success("Этот клиент, вероятно, останется.")
-
-# Если есть вероятность оттока
-if probability_of_churn is not None:
-    st.write(f'Вероятность оттока: {probability_of_churn * 100:.2f}%')
-else:
-    st.warning('Не удалось рассчитать вероятность оттока.')
 
 # Обзор данных
 st.subheader('Обзор данных')
@@ -157,7 +144,7 @@ plt.ylabel('Количество')
 plt.legend(title="Gender", labels=["Женский (0)", "Мужской (1)"], loc="upper right")
 st.pyplot(plt)
 
-# График: Доля ежемесячной оплаты и общей суммы оплаты
+# Доля ежемесячной оплаты и общей суммы оплаты
 plt.figure(figsize=(6, 6))
 sns.boxplot(data=data[['MonthlyCharges', 'TotalCharges']], palette=["skyblue", "orange"])
 plt.title('Распределение оплаты клиентов')
@@ -166,7 +153,7 @@ plt.ylabel('Сумма оплаты')
 plt.xticks(ticks=[0, 1], labels=['Ежемесячная оплата', 'Общая сумма оплаты'])
 st.pyplot(plt)
 
-# Доля PhoneService и InternetService в одном гистаграмме
+# Доля PhoneService и InternetService 
 phone_internet_data = data[['PhoneService', 'InternetService']].apply(pd.Series.value_counts, normalize=True).T
 plt.figure(figsize=(6, 4))
 phone_internet_data.plot(kind='bar', stacked=True, color=['skyblue', 'orange'], edgecolor='black')
@@ -177,7 +164,7 @@ plt.ylabel('Доля')
 plt.legend(title="Тип услуги", labels=["PhoneService", "InternetService"], loc="upper right")
 st.pyplot(plt)
 
-# Contract – тип контракта клиента
+# Тип контракта клиента
 plt.figure(figsize=(6, 4))
 sns.countplot(x='Contract', data=data, hue='Contract', palette='coolwarm', legend=False)
 plt.title('Тип контракта клиента')
@@ -188,8 +175,8 @@ plt.legend(title="Contract", labels=["Month-to-month", "One year", "Two year"], 
 st.pyplot(plt)
 
 # Оценка модели
-st.subheader('Оценка модели')
-st.write(f'Точность модели: {accuracy * 100:.2f}%')
+#st.subheader('Оценка модели')
+#st.write(f'Точность модели: {accuracy * 100:.2f}%')
 
 # Матрица путаницы
 st.subheader('Матрица путаницы')
