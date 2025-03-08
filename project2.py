@@ -5,7 +5,8 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import numpy as np
 
 # Загрузка данных
 data = pd.read_csv('telecom_users.csv')
@@ -15,9 +16,6 @@ data = data.replace({'Yes': 1, 'No': 0})
 data['SeniorCitizen'] = data['SeniorCitizen'].astype(int)
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce').fillna(0)
 data.fillna(0, inplace=True)
-
-# Проверяем типы данных перед кодированием
-
 
 # Кодирование категориальных признаков
 encoder = LabelEncoder()
@@ -68,6 +66,24 @@ fig, ax = plt.subplots(figsize=(8, 6))
 sns.histplot(data['MonthlyCharges'], kde=True, bins=30, ax=ax)
 st.pyplot(fig)
 
+# Визуализация важности признаков
+st.subheader('Важность признаков')
+feature_importance = pd.DataFrame({
+    'Feature': features,
+    'Importance': model.feature_importances_
+}).sort_values(by='Importance', ascending=False)
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.barplot(x='Importance', y='Feature', data=feature_importance, ax=ax)
+st.pyplot(fig)
+
+# Результат предсказания
 st.subheader('Результат предсказания')
 st.write(f'Точность модели: {accuracy:.2f}')
 st.text(classification_report(y_test, y_pred))
+
+# Матрица ошибок
+st.subheader('Матрица ошибок')
+conf_matrix = confusion_matrix(y_test, y_pred)
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Не ушел', 'Ушел'], yticklabels=['Не ушел', 'Ушел'])
+st.pyplot(fig)
