@@ -96,7 +96,7 @@ input_data_scaled = scaler.transform(input_data)
 prediction = model.predict(input_data_scaled)
 prediction_prob = model.predict_proba(input_data_scaled)
 
-# Проверяем размерность прогноза
+# Проверка размерности прогноза
 if prediction_prob.shape[1] == 2:
     # Вероятность оттока
     probability_of_churn = prediction_prob[0][1]
@@ -109,7 +109,12 @@ if prediction == 1:
     st.error("Этот клиент, вероятно, уйдёт.")
 else:
     st.success("Этот клиент, вероятно, останется.")
-st.write(f"🔍 Вероятность оттока: {probability_of_churn * 100:.2f}%")
+
+# Проверка на None для вероятности оттока
+if probability_of_churn is not None:
+    st.write(f"🔍 Вероятность оттока: {probability_of_churn * 100:.2f}%")
+else:
+    st.warning("Не удалось рассчитать вероятность оттока.")
 
 # Обзор данных
 st.subheader('Обзор данных')
