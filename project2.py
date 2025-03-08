@@ -52,40 +52,35 @@ st.write('🔍 Анализ данных и предсказание отток�
 # Боковая панель для ввода признаков
 with st.sidebar:
     st.header("🔧 Введите признаки: ")
+
+    # Размещение чекбоксов рядом
+    col1, col2 = st.columns(2)
     
-    # Пол клиента (gender)
-    gender = st.radio('Пол клиента', ['male', 'female'], index=0)
+    with col1:
+        gender = st.radio('Пол клиента', ['male', 'female'], index=0)
+        
+        SeniorCitizen = st.radio('Пенсионер?', ['Yes', 'No'], index=1)
+        
+        Dependents = st.radio('Есть ли иждивенцы?', ['Yes', 'No'], index=1)
+        
+        PhoneService = st.radio('Подключена ли услуга телефонной связи?', ['Yes', 'No'], index=0)
     
-    # Пенсионер (SeniorCitizen)
-    SeniorCitizen = st.radio('Пенсионер?', ['Yes', 'No'], index=1)
-    
-    # Наличие иждивенцев (Dependents)
-    Dependents = st.radio('Есть ли иждивенцы?', ['Yes', 'No'], index=1)
-    
-    # Тип контракта (Contract)
-    Contract_options = ['Month-to-month', 'One year', 'Two year']
-    Contract = st.selectbox('Тип контракта', Contract_options, index=0)
-    
-    # Длительность обслуживания (tenure)
-    tenure = st.slider('Длительность обслуживания (месяцы)', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
-    
-    # Сервис телефонной связи (PhoneService)
-    PhoneService = st.radio('Подключена ли услуга телефонной связи?', ['Yes', 'No'], index=0)
-    
-    # Интернет-провайдер (InternetService)
-    InternetService_options = ['DSL', 'Fiber optic', 'No']
-    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=0)
-    
-    # Стриминговое телевидение (StreamingTV)
-    StreamingTV_options = ['Yes', 'No', 'No internet service']
-    StreamingTV = st.selectbox('Подключена ли услуга стримингового телевидения?', StreamingTV_options, index=0)
-    
-    # Стриминговое кино (StreamingMovies)
-    StreamingMovies_options = ['Yes', 'No', 'No internet service']
-    StreamingMovies = st.selectbox('Подключена ли услуга стримингового кинотеатра?', StreamingMovies_options, index=0)
-    
-    # Месячный размер оплаты (MonthlyCharges)
-    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
+    with col2:
+        Contract_options = ['Month-to-month', 'One year', 'Two year']
+        Contract = st.selectbox('Тип контракта', Contract_options, index=0)
+
+        tenure = st.slider('Длительность обслуживания (месяцы)', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
+        
+        InternetService_options = ['DSL', 'Fiber optic', 'No']
+        InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=0)
+        
+        StreamingTV_options = ['Yes', 'No', 'No internet service']
+        StreamingTV = st.selectbox('Подключена ли услуга стримингового телевидения?', StreamingTV_options, index=0)
+        
+        StreamingMovies_options = ['Yes', 'No', 'No internet service']
+        StreamingMovies = st.selectbox('Подключена ли услуга стримингового кинотеатра?', StreamingMovies_options, index=0)
+        
+        MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
 
 # Преобразование входных данных
 input_data = pd.DataFrame({
@@ -101,4 +96,43 @@ input_data = pd.DataFrame({
     'MonthlyCharges': [MonthlyCharges]
 })
 
-# Масштабирование 
+# Масштабирование данных
+input_data_scaled = scaler.transform(input_data)
+
+# Прогнозирование
+prediction = model.predict(input_data_scaled)
+prediction_prob = model.predict_proba(input_data_scaled)
+
+# Вероятность оттока
+probability_of_churn = prediction_prob[0][1]
+
+# Отображение результата
+st.subheader('Результат предсказания')
+if prediction == 1:
+    st.write("Клиент вероятно уйдет (отток).")
+else:
+    st.write("Клиент не уйдет (не будет оттока).")
+
+# Вероятность оттока
+st.write(f'Вероятность оттока: {probability_of_churn:.2f}')
+
+# Обзор данных
+st.subheader('Обзор данных')
+st.write(data.head())
+
+# Визуализация важности признаков
+st.subheader('Важность признаков')
+feature_importance = pd.DataFrame({
+    'Feature': features,
+    'Importance': model.feature_importances_
+}).sort_values(by='Importance', ascending=False)
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.barplot(x='Importance', y='Feature', data=feature_importance, ax=ax)
+st.pyplot(fig)
+
+# Матрица ошибок
+st.subheader('Матрица ошибок')
+conf_matrix = confusion_matrix(y_test, y_pred)
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Не ушел', 'Ушел'], yticklabels=['Не ушел', 'Ушел'])
+st.pyplot(fig)
