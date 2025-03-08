@@ -124,19 +124,61 @@ st.write(data.head())
 st.subheader('Введенные данные')
 st.write(input_data)
 
-# Визуализация важности признаков
-st.subheader('Важность признаков')
-feature_importance = pd.DataFrame({
-    'Feature': features,
-    'Importance': model.feature_importances_
-}).sort_values(by='Importance', ascending=False)
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.barplot(x='Importance', y='Feature', data=feature_importance, ax=ax)
+# 2) Диаграмма: Churn – доля отток и не отток
+st.subheader('Доля оттока и не оттока')
+churn_data = data['Churn'].value_counts(normalize=True)
+fig, ax = plt.subplots()
+sns.barplot(x=churn_data.index, y=churn_data.values, ax=ax, palette="Blues_d")
+ax.set_ylabel('Доля клиентов')
+ax.set_xlabel('Отток (Churn)')
+ax.set_title('Доля оттока и не оттока')
 st.pyplot(fig)
 
-# Матрица ошибок
-st.subheader('Матрица ошибок')
-conf_matrix = confusion_matrix(y_test, y_pred)
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Не ушел', 'Ушел'], yticklabels=['Не ушел', 'Ушел'])
+# 3) Диаграмма1: Доля пенсионеров или не пенсионеров
+st.subheader('Доля пенсионеров и не пенсионеров')
+senior_data = data['SeniorCitizen'].value_counts(normalize=True)
+fig, ax = plt.subplots()
+sns.barplot(x=senior_data.index, y=senior_data.values, ax=ax, palette="Blues_d")
+ax.set_ylabel('Доля клиентов')
+ax.set_xlabel('Пенсионер')
+ax.set_title('Доля пенсионеров и не пенсионеров')
+st.pyplot(fig)
+
+# 4) Диаграмма2: Доля женских и мужских половых клиентов
+st.subheader('Доля женских и мужских половых клиентов')
+gender_data = data['gender'].value_counts(normalize=True)
+fig, ax = plt.subplots()
+sns.barplot(x=gender_data.index, y=gender_data.values, ax=ax, palette="Blues_d")
+ax.set_ylabel('Доля клиентов')
+ax.set_xlabel('Пол клиента')
+ax.set_title('Доля женских и мужских половых клиентов')
+st.pyplot(fig)
+
+# 5) График: оплата клиента за месяц и период
+st.subheader('Оплата клиента за месяц и период')
+fig, ax = plt.subplots()
+sns.boxplot(x='SeniorCitizen', y='MonthlyCharges', data=data, ax=ax)
+ax.set_title('Оплата клиента за месяц и период')
+ax.set_xlabel('Пенсионер')
+ax.set_ylabel('Ежемесячная оплата')
+st.pyplot(fig)
+
+# 6) Доля PhoneService и InternetService в одном гистограмме
+st.subheader('Доля PhoneService и InternetService')
+phone_internet_data = data[['PhoneService', 'InternetService']].apply(pd.Series.value_counts, normalize=True).T
+fig, ax = plt.subplots()
+phone_internet_data.plot(kind='bar', stacked=True, ax=ax, color=['skyblue', 'orange'])
+ax.set_ylabel('Доля клиентов')
+ax.set_xlabel('Сервисы')
+ax.set_title('Доля клиентов с услугами PhoneService и InternetService')
+st.pyplot(fig)
+
+# 7) Гистограмма: Contract – тип контракта клиента
+st.subheader('Тип контракта клиента')
+contract_data = data['Contract'].value_counts(normalize=True)
+fig, ax = plt.subplots()
+sns.barplot(x=contract_data.index, y=contract_data.values, ax=ax, palette="Blues_d")
+ax.set_ylabel('Доля клиентов')
+ax.set_xlabel('Тип контракта')
+ax.set_title('Доля клиентов по типу контракта')
 st.pyplot(fig)
