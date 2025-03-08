@@ -96,9 +96,6 @@ input_data_scaled = scaler.transform(input_data)
 prediction = model.predict(input_data_scaled)
 prediction_prob = model.predict_proba(input_data_scaled)
 
-# Отладочный вывод
-st.write(f"Размерность вероятностей: {prediction_prob.shape}")
-
 # Отображение результата
 st.subheader("📌 Результат предсказания")
 if prediction == 1:
