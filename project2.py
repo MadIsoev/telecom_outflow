@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
 import numpy as np
@@ -17,29 +17,24 @@ data['SeniorCitizen'] = data['SeniorCitizen'].astype(int)
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce').fillna(0)
 data.fillna(0, inplace=True)
 
-# Кодирование категориальных признаков
-encoder = LabelEncoder()
-categorical_features = ['gender', 'Dependents', 'Contract', 'PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']
-for col in categorical_features:
-    data[col] = encoder.fit_transform(data[col].astype(str))
-
 # Определение важных признаков
-features = ['gender', 'SeniorCitizen', 'Dependents', 'Contract', 'tenure', 'PhoneService', 
-            'InternetService', 'StreamingTV', 'StreamingMovies', 'MonthlyCharges']
+categorical_features = ['gender', 'Dependents', 'Contract', 'PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']
+numerical_features = ['SeniorCitizen', 'tenure', 'MonthlyCharges']
+features = categorical_features + numerical_features
 
-# Масштабирование данных
+# Масштабирование числовых данных
 scaler = StandardScaler()
-X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
+data[numerical_features] = scaler.fit_transform(data[numerical_features])
 
 # Перевод целевой переменной
 data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
 y = data['Churn']
 
 # Разделение данных
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(data[features], y, test_size=0.2, random_state=42)
 
 # Обучение модели
-model = CatBoostClassifier(iterations=100, depth=6, learning_rate=0.1, loss_function='Logloss', verbose=0)
+model = CatBoostClassifier(iterations=100, depth=6, learning_rate=0.1, loss_function='Logloss', verbose=0, cat_features=categorical_features)
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
@@ -69,23 +64,23 @@ with st.sidebar:
 
 # Преобразование входных данных
 input_data = pd.DataFrame({
-    'gender': [1 if gender == 'male' else 0],
+    'gender': [gender],
     'SeniorCitizen': [1 if SeniorCitizen == 'Yes' else 0],
-    'Dependents': [1 if Dependents == 'Yes' else 0],
-    'Contract': [Contract_options.index(Contract)],
+    'Dependents': [Dependents],
+    'Contract': [Contract],
     'tenure': [tenure],
-    'PhoneService': [1 if PhoneService == 'Yes' else 0],
-    'InternetService': [InternetService_options.index(InternetService)],
-    'StreamingTV': [StreamingTV_options.index(StreamingTV)],
-    'StreamingMovies': [StreamingMovies_options.index(StreamingMovies)],
+    'PhoneService': [PhoneService],
+    'InternetService': [InternetService],
+    'StreamingTV': [StreamingTV],
+    'StreamingMovies': [StreamingMovies],
     'MonthlyCharges': [MonthlyCharges]
 })
 
-# Масштабирование данных
-input_data_scaled = scaler.transform(input_data)
+# Масштабирование числовых данных
+input_data[numerical_features] = scaler.transform(input_data[numerical_features])
 
 # Прогнозирование
-prediction = model.predict(input_data_scaled)
+prediction = model.predict(input_data)
 
 # Отображение результата
 st.subheader("📌 Результат предсказания")
@@ -93,6 +88,15 @@ if prediction == 1:
     st.error("Этот клиент, вероятно, уйдёт.")
 else:
     st.success("Этот клиент, вероятно, останется.")
+
+# Матрица путаницы
+st.subheader('Матрица путаницы')
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток"], yticklabels=["Не отток", "Отток"])
+plt.xlabel("Предсказанный")
+plt.ylabel("Истинный")
+st.pyplot(plt)
+
 
 # Обзор данных
 st.subheader('Обзор данных')
