@@ -124,7 +124,7 @@ st.write(data.head())
 st.subheader('Введенные данные')
 st.write(input_data)
 
-# 2) Диаграмма: Churn – доля отток и не отток
+# Churn – доля отток и не отток
 plt.figure(figsize=(6, 4))
 sns.countplot(x='Churn', data=data, palette='coolwarm', hue='Churn')
 plt.title('Распределение оттока клиентов')
@@ -134,7 +134,7 @@ plt.ylabel('Количество')
 plt.legend(title="Churn", labels=["Не отток (0)", "Отток (1)"], loc="upper right")
 st.pyplot(plt)
 
-# 3) Диаграмма1: Доля пенсионеров и не пенсионеров
+# Доля пенсионеров и не пенсионеров
 plt.figure(figsize=(6, 4))
 sns.countplot(x='SeniorCitizen', data=data, hue='SeniorCitizen', palette='coolwarm', legend=False)
 plt.title('Доля пенсионеров и не пенсионеров')
@@ -144,7 +144,7 @@ plt.ylabel('Количество')
 plt.legend(title="SeniorCitizen", labels=["Не пенсионер (0)", "Пенсионер (1)"], loc="upper right")
 st.pyplot(plt)
 
-# 4) Диаграмма2: Доля женских и мужских половых клиентов
+# Доля женских и мужских половых клиентов
 plt.figure(figsize=(6, 4))
 sns.countplot(x='gender', data=data, hue='gender', palette='coolwarm', legend=False)
 plt.title('Доля женских и мужских половых клиентов')
@@ -154,17 +154,16 @@ plt.ylabel('Количество')
 plt.legend(title="Gender", labels=["Женский (0)", "Мужской (1)"], loc="upper right")
 st.pyplot(plt)
 
-# 5) График: оплата клиента за месяц и период
-plt.figure(figsize=(6, 4))
-sns.boxplot(x='SeniorCitizen', y='MonthlyCharges', data=data, palette="coolwarm")
-plt.title('Оплата клиента за месяц и период')
-plt.xlabel('Пенсионеры')
-plt.ylabel('Ежемесячная оплата')
-# Легенда цветов
-plt.legend(title="SeniorCitizen", labels=["Не пенсионер (0)", "Пенсионер (1)"], loc="upper right")
+# График: Доля ежемесячной оплаты и общей суммы оплаты
+plt.figure(figsize=(6, 6))
+sns.boxplot(data=data[['MonthlyCharges', 'TotalCharges']], palette=["skyblue", "orange"])
+plt.title('Распределение оплаты клиентов')
+plt.xlabel('Тип оплаты')
+plt.ylabel('Сумма оплаты')
+plt.xticks(ticks=[0, 1], labels=['Ежемесячная оплата', 'Общая сумма оплаты'])
 st.pyplot(plt)
 
-# 6) Доля PhoneService и InternetService в одном гистаграмме
+# Доля PhoneService и InternetService в одном гистаграмме
 phone_internet_data = data[['PhoneService', 'InternetService']].apply(pd.Series.value_counts, normalize=True).T
 plt.figure(figsize=(6, 4))
 phone_internet_data.plot(kind='bar', stacked=True, color=['skyblue', 'orange'], edgecolor='black')
@@ -175,7 +174,7 @@ plt.ylabel('Доля')
 plt.legend(title="Тип услуги", labels=["PhoneService", "InternetService"], loc="upper right")
 st.pyplot(plt)
 
-# 7) Гистограмм: Contract – тип контракта клиента
+# Contract – тип контракта клиента
 plt.figure(figsize=(6, 4))
 sns.countplot(x='Contract', data=data, hue='Contract', palette='coolwarm', legend=False)
 plt.title('Тип контракта клиента')
@@ -185,11 +184,11 @@ plt.ylabel('Количество')
 plt.legend(title="Contract", labels=["Month-to-month", "One year", "Two year"], loc="upper right")
 st.pyplot(plt)
 
-# 8) Оценка модели
+# Оценка модели
 st.subheader('Оценка модели')
 st.write(f'Точность модели: {accuracy * 100:.2f}%')
 
-# 9) Матрица путаницы
+#  Матрица путаницы
 st.subheader('Матрица путаницы')
 cm = confusion_matrix(y_test, y_pred)
 sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток"], yticklabels=["Не отток", "Отток"])
@@ -197,6 +196,6 @@ plt.xlabel("Предсказанный")
 plt.ylabel("Истинный")
 st.pyplot(plt)
 
-# 10) Детальная оценка
+#  Детальная оценка
 st.subheader('Детальная оценка модели')
 st.text(classification_report(y_test, y_pred))
