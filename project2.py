@@ -112,7 +112,7 @@ else:
 
 # Если есть вероятность оттока
 if probability_of_churn is not None:
-    st.write(f'Вероятность оттока: {probability_of_churn:.2f}')
+    st.write(f'Вероятность оттока: {probability_of_churn * 100:.2f}%')
 else:
     st.warning('Не удалось рассчитать вероятность оттока.')
 
@@ -172,3 +172,19 @@ plt.title('Тип контракта клиента')
 plt.xlabel('Тип контракта')
 plt.ylabel('Количество')
 st.pyplot(plt)
+
+# 8) Оценка модели
+st.subheader('Оценка модели')
+st.write(f'Точность модели: {accuracy * 100:.2f}%')
+
+# 9) Матрица путаницы
+st.subheader('Матрица путаницы')
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток"], yticklabels=["Не отток", "Отток"])
+plt.xlabel("Предсказанный")
+plt.ylabel("Истинный")
+st.pyplot(plt)
+
+# 10) Детальная оценка
+st.subheader('Детальная оценка модели')
+st.text(classification_report(y_test, y_pred))
