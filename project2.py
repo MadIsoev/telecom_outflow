@@ -96,25 +96,25 @@ input_data_scaled = scaler.transform(input_data)
 prediction = model.predict(input_data_scaled)
 prediction_prob = model.predict_proba(input_data_scaled)
 
-# Проверка размерности прогноза
+# Проверяем размерность прогноза
 if prediction_prob.shape[1] == 2:
     # Вероятность оттока
     probability_of_churn = prediction_prob[0][1]
 else:
     probability_of_churn = None  # Если вероятности оттока нет, то присваиваем None
 
-# Результат предсказания
-st.subheader("📌 Результат предсказания")
+# Отображение результата
+st.subheader('Результат предсказания')
 if prediction == 1:
-    st.error("Этот клиент, вероятно, уйдёт.")
+    st.write("Клиент вероятно уйдет (отток).")
 else:
-    st.success("Этот клиент, вероятно, останется.")
+    st.write("Клиент не уйдет (не будет оттока).")
 
-# Проверка на None для вероятности оттока
+# Если есть вероятность оттока
 if probability_of_churn is not None:
-    st.write(f"🔍 Вероятность оттока: {probability_of_churn * 100:.2f}%")
+    st.write(f'Вероятность оттока: {probability_of_churn * 100:.2f}%')
 else:
-    st.warning("Не удалось рассчитать вероятность оттока.")
+    st.warning('Не удалось рассчитать вероятность оттока.')
 
 # Обзор данных
 st.subheader('Обзор данных')
@@ -130,6 +130,8 @@ sns.countplot(x='Churn', data=data, palette='coolwarm', hue='Churn')
 plt.title('Распределение оттока клиентов')
 plt.xlabel('Отток клиентов')
 plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="Churn", labels=["Не отток (0)", "Отток (1)"], loc="upper right")
 st.pyplot(plt)
 
 # 3) Диаграмма1: Доля пенсионеров и не пенсионеров
@@ -138,6 +140,8 @@ sns.countplot(x='SeniorCitizen', data=data, hue='SeniorCitizen', palette='coolwa
 plt.title('Доля пенсионеров и не пенсионеров')
 plt.xlabel('Пенсионеры')
 plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="SeniorCitizen", labels=["Не пенсионер (0)", "Пенсионер (1)"], loc="upper right")
 st.pyplot(plt)
 
 # 4) Диаграмма2: Доля женских и мужских половых клиентов
@@ -146,6 +150,8 @@ sns.countplot(x='gender', data=data, hue='gender', palette='coolwarm', legend=Fa
 plt.title('Доля женских и мужских половых клиентов')
 plt.xlabel('Пол')
 plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="Gender", labels=["Женский (0)", "Мужской (1)"], loc="upper right")
 st.pyplot(plt)
 
 # 5) График: оплата клиента за месяц и период
@@ -154,6 +160,8 @@ sns.boxplot(x='SeniorCitizen', y='MonthlyCharges', data=data, palette="coolwarm"
 plt.title('Оплата клиента за месяц и период')
 plt.xlabel('Пенсионеры')
 plt.ylabel('Ежемесячная оплата')
+# Легенда цветов
+plt.legend(title="SeniorCitizen", labels=["Не пенсионер (0)", "Пенсионер (1)"], loc="upper right")
 st.pyplot(plt)
 
 # 6) Доля PhoneService и InternetService в одном гистаграмме
@@ -163,12 +171,25 @@ phone_internet_data.plot(kind='bar', stacked=True, color=['skyblue', 'orange'], 
 plt.title('Доля PhoneService и InternetService')
 plt.xlabel('Тип услуги')
 plt.ylabel('Доля')
+# Легенда цветов
+plt.legend(title="Тип услуги", labels=["PhoneService", "InternetService"], loc="upper right")
 st.pyplot(plt)
 
-# 7) Гистаграмм: Contract – тип контракта клиента
+# 7) Гистограмм: Contract – тип контракта клиента
 plt.figure(figsize=(6, 4))
 sns.countplot(x='Contract', data=data, hue='Contract', palette='coolwarm', legend=False)
 plt.title('Тип контракта клиента')
 plt.xlabel('Тип контракта')
 plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="Contract", labels=["Month-to-month", "One year", "Two year"], loc="upper right")
 st.pyplot(plt)
+
+# 8) Оценка модели
+st.subheader('Оценка модели')
+st.write(f'Точность модели: {accuracy * 100:.2f}%')
+
+# 9) Матрица путаницы
+st.subheader('Матрица путаницы')
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток
