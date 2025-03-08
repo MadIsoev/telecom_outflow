@@ -19,16 +19,19 @@ data.fillna(0, inplace=True)
 
 # Кодирование категориальных признаков
 encoder = LabelEncoder()
-categorical_features = ['InternetService', 'Contract', 'PaymentMethod', 'MultipleLines', 'StreamingTV', 'StreamingMovies']
+categorical_features = ['gender', 'Dependents', 'Contract', 'PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']
 for col in categorical_features:
-    data[col] = data[col].astype(str)  # Приводим к строковому типу
-    data[col] = encoder.fit_transform(data[col])
+    data[col] = encoder.fit_transform(data[col].astype(str))  # Приводим к строковому типу и кодируем
 
 # Определение важных признаков
 features = ['gender', 'SeniorCitizen', 'Dependents', 'Contract', 'tenure', 'PhoneService', 
             'InternetService', 'StreamingTV', 'StreamingMovies', 'MonthlyCharges']
+
+# Масштабирование данных
 scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
+
+# Перевод целевой переменной
 data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
 y = data['Churn']
 
@@ -98,43 +101,4 @@ input_data = pd.DataFrame({
     'MonthlyCharges': [MonthlyCharges]
 })
 
-# Масштабирование данных
-input_data_scaled = scaler.transform(input_data)
-
-# Прогнозирование
-prediction = model.predict(input_data_scaled)
-prediction_prob = model.predict_proba(input_data_scaled)
-
-# Вероятность оттока
-probability_of_churn = prediction_prob[0][1]
-
-# Отображение результата
-st.subheader('Результат предсказания')
-if prediction == 1:
-    st.write("Клиент вероятно уйдет (отток).")
-else:
-    st.write("Клиент не уйдет (не будет оттока).")
-
-# Вероятность оттока
-st.write(f'Вероятность оттока: {probability_of_churn:.2f}')
-
-# Обзор данных
-st.subheader('Обзор данных')
-st.write(data.head())
-
-# Визуализация важности признаков
-st.subheader('Важность признаков')
-feature_importance = pd.DataFrame({
-    'Feature': features,
-    'Importance': model.feature_importances_
-}).sort_values(by='Importance', ascending=False)
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.barplot(x='Importance', y='Feature', data=feature_importance, ax=ax)
-st.pyplot(fig)
-
-# Матрица ошибок
-st.subheader('Матрица ошибок')
-conf_matrix = confusion_matrix(y_test, y_pred)
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Не ушел', 'Ушел'], yticklabels=['Не ушел', 'Ушел'])
-st.pyplot(fig)
+# Масштабирование 
