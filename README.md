@@ -66,11 +66,4 @@
      TotalCharges – общая сумма, которую клиент заплатил за услуги за все время
      Churn – произошел ли отток (Yes or No)
 
-## Demo App
-
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)]([https://app-starter-kit.streamlit.app/](https://telecomoutflow-4ct34xhaf4tk7tenc6hfxk.streamlit.app/))
-
-## GitHub Codespaces
-
-[![Open in GitHub Codespaces]([[https://github.com/codespaces/badge.svg](https://github.com/MadIsoev/telecom_outflow/tree/master))]
 
