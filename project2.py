@@ -17,7 +17,7 @@ data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data.fillna(0, inplace=True)
 
 # Проверяем типы данных перед кодированием
-print(data.dtypes)
+
 
 # Кодирование категориальных признаков
 encoder = LabelEncoder()
@@ -29,7 +29,9 @@ for col in categorical_features:
 # Определение важных признаков
 features = ['tenure', 'PhoneService', 'InternetService', 'MonthlyCharges', 'TotalCharges',
             'Contract', 'PaymentMethod']
-X = data[features]
+scaler = StandardScaler()
+X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
+data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0})
 y = data['Churn']
 
 # Разделение данных
@@ -41,14 +43,9 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
-# Установка страницы
+# Интерфейс Streamlit
 st.set_page_config(page_title='Прогноз оттока клиентов', layout='wide')
 st.title('📊 Прогнозирование оттока клиентов')
-st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
-
-# Обзор данных
-with st.expander('📊 Просмотр данных'):
-    st.write(data.head())
 
 # Боковая панель выбора признаков
 st.sidebar.header('Выбор признаков')
@@ -60,7 +57,10 @@ st.write(data.head())
 
 # Выбранные признаки
 st.subheader('Выбранные признаки')
-st.write(X[selected_features].head())
+if selected_features:
+    st.write(X[selected_features].head())
+else:
+    st.warning('Выберите хотя бы один признак.')
 
 # Визуализации
 st.subheader('Гистограммы')
