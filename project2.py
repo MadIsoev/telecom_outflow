@@ -67,4 +67,65 @@ with st.sidebar:
     InternetService_options = ['DSL', 'Fiber optic', 'No']
     InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=0)
 
-    StreamingTV_options = ['Yes', 'No'
+    StreamingTV_options = ['Yes', 'No', 'No internet service']
+    StreamingTV = st.selectbox('Подключена ли услуга стримингового телевидения?', StreamingTV_options, index=0)
+
+    StreamingMovies_options = ['Yes', 'No', 'No internet service']
+    StreamingMovies = st.selectbox('Подключена ли услуга стримингового кинотеатра?', StreamingMovies_options, index=0)
+
+    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
+
+# Преобразование входных данных
+input_data = pd.DataFrame({
+    'gender': [1 if gender == 'male' else 0],
+    'SeniorCitizen': [1 if SeniorCitizen == 'Yes' else 0],
+    'Dependents': [1 if Dependents == 'Yes' else 0],
+    'Contract': [Contract_options.index(Contract)],
+    'tenure': [tenure],
+    'PhoneService': [1 if PhoneService == 'Yes' else 0],
+    'InternetService': [InternetService_options.index(InternetService)],
+    'StreamingTV': [StreamingTV_options.index(StreamingTV)],
+    'StreamingMovies': [StreamingMovies_options.index(StreamingMovies)],
+    'MonthlyCharges': [MonthlyCharges]
+})
+
+# Масштабирование данных
+input_data_scaled = scaler.transform(input_data)
+
+# Прогнозирование
+prediction = model.predict(input_data_scaled)
+prediction_prob = model.predict_proba(input_data_scaled)
+
+# Вероятность оттока
+probability_of_churn = prediction_prob[0][1]
+
+# Отображение результата
+st.subheader('Результат предсказания')
+if prediction == 1:
+    st.write("Клиент вероятно уйдет (отток).")
+else:
+    st.write("Клиент не уйдет (не будет оттока).")
+
+# Вероятность оттока
+st.write(f'Вероятность оттока: {probability_of_churn:.2f}')
+
+# Обзор данных
+st.subheader('Обзор данных')
+st.write(data.head())
+
+# Визуализация важности признаков
+st.subheader('Важность признаков')
+feature_importance = pd.DataFrame({
+    'Feature': features,
+    'Importance': model.feature_importances_
+}).sort_values(by='Importance', ascending=False)
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.barplot(x='Importance', y='Feature', data=feature_importance, ax=ax)
+st.pyplot(fig)
+
+# Матрица ошибок
+st.subheader('Матрица ошибок')
+conf_matrix = confusion_matrix(y_test, y_pred)
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Не ушел', 'Ушел'], yticklabels=['Не ушел', 'Ушел'])
+st.pyplot(fig)
