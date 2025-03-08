@@ -19,14 +19,14 @@ data.fillna(0, inplace=True)
 
 # Кодирование категориальных признаков
 encoder = LabelEncoder()
-categorical_features = ['InternetService', 'Contract', 'PaymentMethod', 'MultipleLines']
+categorical_features = ['InternetService', 'Contract', 'PaymentMethod', 'MultipleLines', 'StreamingTV', 'StreamingMovies']
 for col in categorical_features:
     data[col] = data[col].astype(str)  # Приводим к строковому типу
     data[col] = encoder.fit_transform(data[col])
 
 # Определение важных признаков
-features = ['tenure', 'PhoneService', 'InternetService', 'MonthlyCharges', 'TotalCharges',
-            'Contract', 'PaymentMethod']
+features = ['gender', 'SeniorCitizen', 'Dependents', 'Contract', 'tenure', 'PhoneService', 
+            'InternetService', 'StreamingTV', 'StreamingMovies', 'MonthlyCharges']
 scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
 data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
@@ -50,40 +50,52 @@ st.write('🔍 Анализ данных и предсказание отток�
 with st.sidebar:
     st.header("🔧 Введите признаки: ")
     
-    # Длительность обслуживания (tenure)
-    tenure = st.slider('Длительность обслуживания', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
+    # Пол клиента (gender)
+    gender = st.radio('Пол клиента', ['male', 'female'], index=0)
     
-    # Ежемесячные платежи (MonthlyCharges)
-    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
+    # Пенсионер (SeniorCitizen)
+    SeniorCitizen = st.radio('Пенсионер?', ['Yes', 'No'], index=1)
     
-    # Тип интернет-услуги (InternetService)
-    InternetService_options = ['DSL', 'Fiber optic', 'No']
-    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=InternetService_options.index('DSL'))  # По умолчанию выбрано 'DSL'
-    
-    # Общая сумма (TotalCharges)
-    TotalCharges = st.slider('Общая сумма', min_value=float(data['TotalCharges'].min()), max_value=float(data['TotalCharges'].max()), value=float(data['TotalCharges'].mean()))
-    
-    # Сервис (PhoneService)
-    PhoneService_options = ['Yes', 'No']
-    PhoneService = st.selectbox('Сервис', PhoneService_options, index=PhoneService_options.index('Yes'))  # По умолчанию выбрано 'Yes'
+    # Наличие иждивенцев (Dependents)
+    Dependents = st.radio('Есть ли иждивенцы?', ['Yes', 'No'], index=1)
     
     # Тип контракта (Contract)
     Contract_options = ['Month-to-month', 'One year', 'Two year']
-    Contract = st.selectbox('Тип контракта', Contract_options, index=Contract_options.index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
+    Contract = st.selectbox('Тип контракта', Contract_options, index=0)
     
-    # Метод оплаты (PaymentMethod)
-    PaymentMethod_options = ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
-    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=PaymentMethod_options.index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
+    # Длительность обслуживания (tenure)
+    tenure = st.slider('Длительность обслуживания (месяцы)', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
+    
+    # Сервис телефонной связи (PhoneService)
+    PhoneService = st.radio('Подключена ли услуга телефонной связи?', ['Yes', 'No'], index=0)
+    
+    # Интернет-провайдер (InternetService)
+    InternetService_options = ['DSL', 'Fiber optic', 'No']
+    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=0)
+    
+    # Стриминговое телевидение (StreamingTV)
+    StreamingTV_options = ['Yes', 'No', 'No internet service']
+    StreamingTV = st.selectbox('Подключена ли услуга стримингового телевидения?', StreamingTV_options, index=0)
+    
+    # Стриминговое кино (StreamingMovies)
+    StreamingMovies_options = ['Yes', 'No', 'No internet service']
+    StreamingMovies = st.selectbox('Подключена ли услуга стримингового кинотеатра?', StreamingMovies_options, index=0)
+    
+    # Месячный размер оплаты (MonthlyCharges)
+    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
 
-# Создание данных для предсказания
+# Преобразование входных данных
 input_data = pd.DataFrame({
+    'gender': [1 if gender == 'male' else 0],
+    'SeniorCitizen': [1 if SeniorCitizen == 'Yes' else 0],
+    'Dependents': [1 if Dependents == 'Yes' else 0],
+    'Contract': [Contract_options.index(Contract)],
     'tenure': [tenure],
     'PhoneService': [1 if PhoneService == 'Yes' else 0],
     'InternetService': [InternetService_options.index(InternetService)],
-    'MonthlyCharges': [MonthlyCharges],
-    'TotalCharges': [TotalCharges],
-    'Contract': [Contract_options.index(Contract)],
-    'PaymentMethod': [PaymentMethod_options.index(PaymentMethod)],
+    'StreamingTV': [StreamingTV_options.index(StreamingTV)],
+    'StreamingMovies': [StreamingMovies_options.index(StreamingMovies)],
+    'MonthlyCharges': [MonthlyCharges]
 })
 
 # Масштабирование данных
@@ -93,13 +105,8 @@ input_data_scaled = scaler.transform(input_data)
 prediction = model.predict(input_data_scaled)
 prediction_prob = model.predict_proba(input_data_scaled)
 
-# Проверка, что вероятности присутствуют
-if prediction_prob.shape[1] > 1:
-    # Вероятность оттока (для класса 1)
-    probability_of_churn = prediction_prob[0][1]
-else:
-    # Если только один класс (например, для бинарной классификации с одним положительным классом)
-    probability_of_churn = prediction_prob[0][0]
+# Вероятность оттока
+probability_of_churn = prediction_prob[0][1]
 
 # Отображение результата
 st.subheader('Результат предсказания')
