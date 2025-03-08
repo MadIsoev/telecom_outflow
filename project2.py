@@ -96,7 +96,10 @@ input_data_scaled = scaler.transform(input_data)
 prediction = model.predict(input_data_scaled)
 prediction_prob = model.predict_proba(input_data_scaled)
 
-# Проверяем размерность прогноза
+# Отладочный вывод
+st.write(f"Размерность вероятностей: {prediction_prob.shape}")
+
+# Проверка на правильность
 if prediction_prob.shape[1] == 2:
     # Вероятность оттока
     probability_of_churn = prediction_prob[0][1]
@@ -188,11 +191,10 @@ st.pyplot(plt)
 st.subheader('Оценка модели')
 st.write(f'Точность модели: {accuracy * 100:.2f}%')
 
-#  Матрица путаницы
+# Матрица путаницы
 st.subheader('Матрица путаницы')
 cm = confusion_matrix(y_test, y_pred)
 sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток"], yticklabels=["Не отток", "Отток"])
 plt.xlabel("Предсказанный")
 plt.ylabel("Истинный")
 st.pyplot(plt)
-
