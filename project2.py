@@ -102,6 +102,15 @@ else:
 # Вероятность оттока
 st.write(f'Вероятность оттока: {prediction_prob[0][1]:.2f}')
 
+# Обзор данных
+st.subheader('Обзор данных')
+st.write(data.head())
+
+# Выбранные признаки
+st.subheader('Выбранные признаки')
+selected_features = features  # Отображаем все выбранные признаки
+st.write(input_data)
+
 # Результат обучения модели
 st.subheader('Результат предсказания на тестовых данных')
 st.write(f'Точность модели: {accuracy:.2f}')
