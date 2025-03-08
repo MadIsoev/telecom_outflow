@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import numpy as np
 
 # Загрузка данных
 data = pd.read_csv('telecom_users.csv')
@@ -45,7 +46,7 @@ st.set_page_config(page_title='Прогноз оттока клиентов', la
 st.title('📊 Прогнозирование оттока клиентов')
 st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
 
-# Форма для ввода данных в боковой панели
+# Боковая панель для ввода признаков
 with st.sidebar:
     st.header("🔧 Введите признаки: ")
     
@@ -74,7 +75,7 @@ with st.sidebar:
     PaymentMethod_options = ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
     PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=PaymentMethod_options.index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
 
-# Преобразование введенных данных для предсказания
+# Создание данных для предсказания
 input_data = pd.DataFrame({
     'tenure': [tenure],
     'PhoneService': [1 if PhoneService == 'Yes' else 0],
@@ -92,6 +93,14 @@ input_data_scaled = scaler.transform(input_data)
 prediction = model.predict(input_data_scaled)
 prediction_prob = model.predict_proba(input_data_scaled)
 
+# Проверка, что вероятности присутствуют
+if prediction_prob.shape[1] > 1:
+    # Вероятность оттока (для класса 1)
+    probability_of_churn = prediction_prob[0][1]
+else:
+    # Если только один класс (например, для бинарной классификации с одним положительным классом)
+    probability_of_churn = prediction_prob[0][0]
+
 # Отображение результата
 st.subheader('Результат предсказания')
 if prediction == 1:
@@ -100,29 +109,13 @@ else:
     st.write("Клиент не уйдет (не будет оттока).")
 
 # Вероятность оттока
-st.write(f'Вероятность оттока: {prediction_prob[0][1]:.2f}')
+st.write(f'Вероятность оттока: {probability_of_churn:.2f}')
 
 # Обзор данных
 st.subheader('Обзор данных')
 st.write(data.head())
 
-# Выбранные признаки
-st.subheader('Выбранные признаки')
-selected_features = features  # Отображаем все выбранные признаки
-st.write(input_data)
-
-# Результат обучения модели
-st.subheader('Результат предсказания на тестовых данных')
-st.write(f'Точность модели: {accuracy:.2f}')
-st.text(classification_report(y_test, y_pred))
-
-# Визуализации
-st.subheader('Гистограммы')
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.histplot(data['MonthlyCharges'], kde=True, bins=30, ax=ax)
-st.pyplot(fig)
-
-# Важность признаков
+# Визуализация важности признаков
 st.subheader('Важность признаков')
 feature_importance = pd.DataFrame({
     'Feature': features,
