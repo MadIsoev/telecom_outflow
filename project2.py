@@ -6,10 +6,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import roc_curve, auc
 import numpy as np
 
-# Загрузка данных
-data = pd.read_csv('telecom_users.csv')
+# Загрузка данных с обработкой ошибок
+try:
+    data = pd.read_csv('telecom_users.csv')
+except FileNotFoundError:
+    st.error('Файл с данными не найден. Пожалуйста, загрузите его заново.')
+    st.stop()
 
 # Предобработка данных
 data = data.replace({'Yes': 1, 'No': 0})
@@ -53,7 +58,7 @@ selected_features = st.sidebar.multiselect('Выберите признаки', 
 # Отображение данных
 st.subheader('Обзор данных')
 st.write(data.head())
-    
+
 # Выбранные признаки
 st.subheader('Выбранные признаки')
 if selected_features:
@@ -61,7 +66,14 @@ if selected_features:
 else:
     st.warning('Выберите хотя бы один признак.')
 
-# Визуализации
+# Визуализация распределения оттока клиентов
+st.subheader('Распределение оттока клиентов')
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.countplot(x='Churn', data=data, ax=ax)
+ax.set_xticklabels(['Не ушел', 'Ушел'])
+st.pyplot(fig)
+
+# Гистограмма
 st.subheader('Гистограммы')
 fig, ax = plt.subplots(figsize=(8, 6))
 sns.histplot(data['MonthlyCharges'], kde=True, bins=30, ax=ax)
@@ -87,4 +99,17 @@ st.subheader('Матрица ошибок')
 conf_matrix = confusion_matrix(y_test, y_pred)
 fig, ax = plt.subplots(figsize=(8, 6))
 sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Не ушел', 'Ушел'], yticklabels=['Не ушел', 'Ушел'])
+st.pyplot(fig)
+
+# ROC-кривая
+st.subheader('ROC-кривая')
+fpr, tpr, thresholds = roc_curve(y_test, model.predict_proba(X_test)[:, 1])
+roc_auc = auc(fpr, tpr)
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+ax.plot([0, 1], [0, 1], color='red', linestyle='--')
+ax.set_xlabel('False Positive Rate')
+ax.set_ylabel('True Positive Rate')
+ax.set_title('ROC-Кривая')
+ax.legend(loc='lower right')
 st.pyplot(fig)
