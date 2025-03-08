@@ -169,4 +169,6 @@ phone_internet_data = data[['PhoneService', 'InternetService']].apply(pd.Series.
 fig, ax = plt.subplots(figsize=(8, 5))
 phone_internet_data.plot(kind='bar', stacked=True, ax=ax, color=['skyblue', 'orange'], edgecolor='black')
 ax.set_ylabel('Доля клиентов', fontsize=12)
-ax.set_xlabel('Сервисы', fontsize=
+ax.set_xlabel('Сервисы', fontsize=12)
+ax.set_title('Доля PhoneService и InternetService', fontsize=14)
+st.pyplot(fig)
