@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 # Загрузка данных
-data = pd.read_csv('telecom_users.csv')
+data = pd.read_csv('telco_customer_churn.csv')
 
 # Предобработка данных
 data = data.replace({'Yes': 1, 'No': 0})
@@ -16,10 +16,14 @@ data['SeniorCitizen'] = data['SeniorCitizen'].astype(int)
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
 data.fillna(0, inplace=True)
 
+# Проверяем типы данных перед кодированием
+print(data.dtypes)
+
 # Кодирование категориальных признаков
 encoder = LabelEncoder()
 categorical_features = ['InternetService', 'Contract', 'PaymentMethod', 'MultipleLines']
 for col in categorical_features:
+    data[col] = data[col].astype(str)  # Приводим к строковому типу
     data[col] = encoder.fit_transform(data[col])
 
 # Определение важных признаков
