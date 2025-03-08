@@ -1,151 +1,184 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from catboost import CatBoostClassifier
-from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
-from category_encoders import TargetEncoder
-
-# Установка страницы
-st.set_page_config(page_title='Прогноз оттока клиентов', layout='wide')
-st.title('📊 Прогнозирование оттока клиентов')
-st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import numpy as np
 
 # Загрузка данных
 data = pd.read_csv('telecom_users.csv')
 
-# Обзор данных
-with st.expander('📊 Просмотр данных'):
-    st.write(data.head())
-
-# Обработка данных
-data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
-data['TotalCharges'].fillna(data['TotalCharges'].median(), inplace=True)
+# Предобработка данных
+data = data.replace({'Yes': 1, 'No': 0})
+data['SeniorCitizen'] = data['SeniorCitizen'].astype(int)
+data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce').fillna(0)
+data.fillna(0, inplace=True)
 
 # Кодирование категориальных признаков
-label_cols = ['gender', 'Partner', 'Dependents', 'PhoneService', 'PaperlessBilling', 'Churn']
-ohe_cols = ['MultipleLines', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaymentMethod']
-target_cols = ['InternetService']
+encoder = LabelEncoder()
+categorical_features = ['gender', 'Dependents', 'Contract', 'PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']
+for col in categorical_features:
+    data[col] = encoder.fit_transform(data[col].astype(str))  # Приводим к строковому типу и кодируем
 
-# Используем LabelEncoder для категориальных признаков с бинарным кодированием
-le = LabelEncoder()
-for col in label_cols:
-    data[col] = le.fit_transform(data[col])
-
-# One-hot кодирование для переменных с несколькими категориями
-data = pd.get_dummies(data, columns=ohe_cols, drop_first=True)
-
-# Кодирование столбца InternetService с использованием TargetEncoder
-te = TargetEncoder(cols=target_cols)
-data[target_cols] = te.fit_transform(data[target_cols], data['Churn'])
-
-data = data.apply(pd.to_numeric, errors='coerce')
-
-# Разделение данных
-X = data.drop(columns=['Churn'])
-y = data['Churn']
+# Определение важных признаков
+features = ['gender', 'SeniorCitizen', 'Dependents', 'Contract', 'tenure', 'PhoneService', 
+            'InternetService', 'StreamingTV', 'StreamingMovies', 'MonthlyCharges']
 
 # Масштабирование данных
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-X = pd.DataFrame(X_scaled, columns=X.columns)
+X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
 
-# Разделение на тренировочные и тестовые данные
+# Перевод целевой переменной
+data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
+y = data['Churn']
+
+# Разделение данных
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Обучение модели
-clf = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.1, verbose=0)
-clf.fit(X_train, y_train)
-
-# Прогнозы
-y_pred = clf.predict(X_test)
-y_prob = clf.predict_proba(X_test)[:, 1]
-
-# Оценка модели
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_prob)
 
-# Вывод результатов модели
-st.subheader('📊 Результаты модели')
-st.metric(label='Точность', value=f"{accuracy:.4f}")
-st.metric(label='ROC AUC', value=f"{roc_auc:.4f}")
+# Интерфейс Streamlit
+st.set_page_config(page_title='Прогноз оттока клиентов', layout='wide')
+st.title('📊 Прогнозирование оттока клиентов')
+st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
 
-# Отчет по классификации
-st.subheader('📌 Отчет по классификации')
-st.write(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
-
-# Распределение оттока клиентов
-plt.figure(figsize=(6, 4))
-sns.countplot(x='Churn', data=data, hue='Churn', palette='coolwarm', legend=False)
-plt.title('Распределение оттока клиентов')
-st.pyplot(plt)
-
-# Форма для ввода данных
+# Боковая панель для ввода признаков
 with st.sidebar:
     st.header("🔧 Введите признаки: ")
-    
-    # Длительность обслуживания (tenure)
-    tenure = st.slider('Длительность обслуживания', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
-    
-    # Ежемесячные платежи (MonthlyCharges)
-    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
-    
-    # Тип интернет-услуги (InternetService)
-    InternetService_options = ['DSL', 'Fiber optic', 'No']
-    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=InternetService_options.index('DSL'))  # По умолчанию выбрано 'DSL'
-    
-    # Общая сумма (TotalCharges)
-    TotalCharges = st.slider('Общая сумма', min_value=float(data['TotalCharges'].min()), max_value=float(data['TotalCharges'].max()), value=float(data['TotalCharges'].mean()))
-    
-    # Сервис (PhoneService)
-    PhoneService_options = ['Yes', 'No']
-    PhoneService = st.selectbox('Сервис', PhoneService_options, index=PhoneService_options.index('Yes'))  # По умолчанию выбрано 'Yes'
-    
-    # Тип контракта (Contract)
+
+    # Использование чекбоксов для выбора "Yes" или "No" значений
+    gender = st.selectbox('Пол клиента', ['male', 'female'], index=0)
+    SeniorCitizen = st.selectbox('Пенсионер?', ['Yes', 'No'], index=1)
+    Dependents = st.selectbox('Есть ли иждивенцы?', ['Yes', 'No'], index=1)
+    PhoneService = st.selectbox('Подключена ли услуга телефонной связи?', ['Yes', 'No'], index=0)
+
     Contract_options = ['Month-to-month', 'One year', 'Two year']
-    Contract = st.selectbox('Тип контракта', Contract_options, index=Contract_options.index('Month-to-month'))  # По умолчанию выбрано 'Month-to-month'
-    
-    # Метод оплаты (PaymentMethod)
-    PaymentMethod_options = ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
-    PaymentMethod = st.selectbox('Метод оплаты', PaymentMethod_options, index=PaymentMethod_options.index('Electronic check'))  # По умолчанию выбрано 'Electronic check'
+    Contract = st.selectbox('Тип контракта', Contract_options, index=0)
 
-# Прогнозирование для введенных данных
-input_data = {
-    'tenure': tenure,
-    'MonthlyCharges': MonthlyCharges,
-    'InternetService': InternetService,
-    'TotalCharges': TotalCharges,
-    'PhoneService': PhoneService,
-    'Contract': Contract,
-    'PaymentMethod': PaymentMethod
-}
+    tenure = st.slider('Длительность обслуживания (месяцы)', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
 
-# Преобразование введенных данных в DataFrame
-input_df = pd.DataFrame([input_data])
+    InternetService_options = ['DSL', 'Fiber optic', 'No']
+    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=0)
 
-# Преобразуем введенные данные в нужный формат
-input_df['InternetService'] = te.transform(input_df['InternetService'])
-input_df['PhoneService'] = le.transform(input_df['PhoneService'])
-input_df['Contract'] = le.transform(input_df['Contract'])
-input_df['PaymentMethod'] = le.transform(input_df['PaymentMethod'])
+    StreamingTV_options = ['Yes', 'No', 'No internet service']
+    StreamingTV = st.selectbox('Подключена ли услуга стримингового телевидения?', StreamingTV_options, index=0)
 
-# One-hot кодирование для столбцов с несколькими категориями (обработанных через pd.get_dummies)
-input_df = pd.get_dummies(input_df, columns=ohe_cols, drop_first=True)
+    StreamingMovies_options = ['Yes', 'No', 'No internet service']
+    StreamingMovies = st.selectbox('Подключена ли услуга стримингового кинотеатра?', StreamingMovies_options, index=0)
 
-# Применяем тот же масштабировщик, что и для обучающего набора
-input_df_scaled = scaler.transform(input_df)
+    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
 
-# Прогноз
-input_prediction = clf.predict(input_df_scaled)
-input_proba = clf.predict_proba(input_df_scaled)[:, 1]
+# Преобразование входных данных
+input_data = pd.DataFrame({
+    'gender': [1 if gender == 'male' else 0],
+    'SeniorCitizen': [1 if SeniorCitizen == 'Yes' else 0],
+    'Dependents': [1 if Dependents == 'Yes' else 0],
+    'Contract': [Contract_options.index(Contract)],
+    'tenure': [tenure],
+    'PhoneService': [1 if PhoneService == 'Yes' else 0],
+    'InternetService': [InternetService_options.index(InternetService)],
+    'StreamingTV': [StreamingTV_options.index(StreamingTV)],
+    'StreamingMovies': [StreamingMovies_options.index(StreamingMovies)],
+    'MonthlyCharges': [MonthlyCharges]
+})
 
-# Результат предсказания
+# Масштабирование данных
+input_data_scaled = scaler.transform(input_data)
+
+# Прогнозирование
+prediction = model.predict(input_data_scaled)
+prediction_prob = model.predict_proba(input_data_scaled)
+
+# Отображение результата
 st.subheader("📌 Результат предсказания")
-if input_prediction == 1:
+if prediction == 1:
     st.error("Этот клиент, вероятно, уйдёт.")
 else:
     st.success("Этот клиент, вероятно, останется.")
-st.write(f"🔍 Вероятность оттока: {input_proba[0]:.2f}")
+
+# Обзор данных
+st.subheader('Обзор данных')
+st.write(data.head())
+
+# Введенные данные
+st.subheader('Введенные данные')
+st.write(input_data)
+
+# Churn – доля отток и не отток
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Churn', data=data, palette='coolwarm', hue='Churn')
+plt.title('Распределение оттока клиентов')
+plt.xlabel('Отток клиентов')
+plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="Churn", labels=["Не отток (0)", "Отток (1)"], loc="upper right")
+st.pyplot(plt)
+
+# Доля пенсионеров и не пенсионеров
+plt.figure(figsize=(6, 4))
+sns.countplot(x='SeniorCitizen', data=data, hue='SeniorCitizen', palette='coolwarm', legend=False)
+plt.title('Доля пенсионеров и не пенсионеров')
+plt.xlabel('Пенсионеры')
+plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="SeniorCitizen", labels=["Не пенсионер (0)", "Пенсионер (1)"], loc="upper right")
+st.pyplot(plt)
+
+# Доля женских и мужских половых клиентов
+plt.figure(figsize=(6, 4))
+sns.countplot(x='gender', data=data, hue='gender', palette='coolwarm', legend=False)
+plt.title('Доля женских и мужских половых клиентов')
+plt.xlabel('Пол')
+plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="Gender", labels=["Женский (0)", "Мужской (1)"], loc="upper right")
+st.pyplot(plt)
+
+# Доля ежемесячной оплаты и общей суммы оплаты
+plt.figure(figsize=(6, 6))
+sns.boxplot(data=data[['MonthlyCharges', 'TotalCharges']], palette=["skyblue", "orange"])
+plt.title('Распределение оплаты клиентов')
+plt.xlabel('Тип оплаты')
+plt.ylabel('Сумма оплаты')
+plt.xticks(ticks=[0, 1], labels=['Ежемесячная оплата', 'Общая сумма оплаты'])
+st.pyplot(plt)
+
+# Доля PhoneService и InternetService 
+phone_internet_data = data[['PhoneService', 'InternetService']].apply(pd.Series.value_counts, normalize=True).T
+plt.figure(figsize=(6, 4))
+phone_internet_data.plot(kind='bar', stacked=True, color=['skyblue', 'orange'], edgecolor='black')
+plt.title('Доля PhoneService и InternetService')
+plt.xlabel('Тип услуги')
+plt.ylabel('Доля')
+# Легенда цветов
+plt.legend(title="Тип услуги", labels=["PhoneService", "InternetService"], loc="upper right")
+st.pyplot(plt)
+
+# Тип контракта клиента
+plt.figure(figsize=(6, 4))
+sns.countplot(x='Contract', data=data, hue='Contract', palette='coolwarm', legend=False)
+plt.title('Тип контракта клиента')
+plt.xlabel('Тип контракта')
+plt.ylabel('Количество')
+# Легенда цветов
+plt.legend(title="Contract", labels=["Month-to-month", "One year", "Two year"], loc="upper right")
+st.pyplot(plt)
+
+# Оценка модели
+#st.subheader('Оценка модели')
+#st.write(f'Точность модели: {accuracy * 100:.2f}%')
+
+# Матрица путаницы
+st.subheader('Матрица путаницы')
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток"], yticklabels=["Не отток", "Отток"])
+plt.xlabel("Предсказанный")
+plt.ylabel("Истинный")
+st.pyplot(plt)
