@@ -3,10 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from catboost import CatBoostClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
-import numpy as np
 
 # Загрузка данных
 data = pd.read_csv('telecom_users.csv')
@@ -17,25 +16,32 @@ data['SeniorCitizen'] = data['SeniorCitizen'].astype(int)
 data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce').fillna(0)
 data.fillna(0, inplace=True)
 
-# Определение важных признаков
+# Кодирование категориальных признаков
+encoder = LabelEncoder()
 categorical_features = ['gender', 'Dependents', 'Contract', 'PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']
-numerical_features = ['SeniorCitizen', 'tenure', 'MonthlyCharges']
-features = categorical_features + numerical_features
+for col in categorical_features:
+    data[col] = encoder.fit_transform(data[col].astype(str))
 
-# Масштабирование числовых данных
+# Определение важных признаков
+features = ['gender', 'SeniorCitizen', 'Dependents', 'Contract', 'tenure', 'PhoneService', 
+            'InternetService', 'StreamingTV', 'StreamingMovies', 'MonthlyCharges']
+
+# Масштабирование данных
 scaler = StandardScaler()
-data[numerical_features] = scaler.fit_transform(data[numerical_features])
+X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
 
 # Перевод целевой переменной
 data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
 y = data['Churn']
 
 # Разделение данных
-X_train, X_test, y_train, y_test = train_test_split(data[features], y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Обучение модели
-model = CatBoostClassifier(iterations=100, depth=6, learning_rate=0.1, loss_function='Logloss', verbose=0, cat_features=categorical_features)
+# Обучение модели CatBoost
+cat_features = ['gender', 'Dependents', 'Contract', 'PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']
+model = CatBoostClassifier(iterations=1000, depth=6, learning_rate=0.1, loss_function='Logloss', cat_features=cat_features, verbose=200)
 model.fit(X_train, y_train)
+
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
@@ -44,58 +50,11 @@ st.set_page_config(page_title='Прогноз оттока клиентов', la
 st.title('📊 Прогнозирование оттока клиентов')
 st.write('🔍 Анализ данных и предсказание оттока клиентов телекоммуникационной компании.')
 
-# Боковая панель для ввода признаков
-with st.sidebar:
-    st.header("🔧 Введите признаки: ")
-    gender = st.selectbox('Пол клиента', ['male', 'female'], index=0)
-    SeniorCitizen = st.selectbox('Пенсионер?', ['Yes', 'No'], index=1)
-    Dependents = st.selectbox('Есть ли иждивенцы?', ['Yes', 'No'], index=1)
-    PhoneService = st.selectbox('Подключена ли услуга телефонной связи?', ['Yes', 'No'], index=0)
-    Contract_options = ['Month-to-month', 'One year', 'Two year']
-    Contract = st.selectbox('Тип контракта', Contract_options, index=0)
-    tenure = st.slider('Длительность обслуживания (месяцы)', min_value=int(data['tenure'].min()), max_value=int(data['tenure'].max()), value=int(data['tenure'].mean()))
-    InternetService_options = ['DSL', 'Fiber optic', 'No']
-    InternetService = st.selectbox('Тип интернет-услуги', InternetService_options, index=0)
-    StreamingTV_options = ['Yes', 'No', 'No internet service']
-    StreamingTV = st.selectbox('Подключена ли услуга стримингового телевидения?', StreamingTV_options, index=0)
-    StreamingMovies_options = ['Yes', 'No', 'No internet service']
-    StreamingMovies = st.selectbox('Подключена ли услуга стримингового кинотеатра?', StreamingMovies_options, index=0)
-    MonthlyCharges = st.slider('Ежемесячные платежи', min_value=float(data['MonthlyCharges'].min()), max_value=float(data['MonthlyCharges'].max()), value=float(data['MonthlyCharges'].mean()))
+# Оценка модели
+st.subheader('Оценка модели')
+st.write(f'Точность модели: {accuracy * 100:.2f}%')
 
-# Преобразование входных данных
-input_data = pd.DataFrame({
-    'gender': [gender],
-    'SeniorCitizen': [1 if SeniorCitizen == 'Yes' else 0],
-    'Dependents': [Dependents],
-    'Contract': [Contract],
-    'tenure': [tenure],
-    'PhoneService': [PhoneService],
-    'InternetService': [InternetService],
-    'StreamingTV': [StreamingTV],
-    'StreamingMovies': [StreamingMovies],
-    'MonthlyCharges': [MonthlyCharges]
-})
 
-# Масштабирование числовых данных
-input_data[numerical_features] = scaler.transform(input_data[numerical_features])
-
-# Прогнозирование
-prediction = model.predict(input_data)
-
-# Отображение результата
-st.subheader("📌 Результат предсказания")
-if prediction == 1:
-    st.error("Этот клиент, вероятно, уйдёт.")
-else:
-    st.success("Этот клиент, вероятно, останется.")
-
-# Матрица путаницы
-st.subheader('Матрица путаницы')
-cm = confusion_matrix(y_test, y_pred)
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток", "Отток"], yticklabels=["Не отток", "Отток"])
-plt.xlabel("Предсказанный")
-plt.ylabel("Истинный")
-st.pyplot(plt)
 
 
 # Обзор данных
@@ -177,3 +136,4 @@ sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток
 plt.xlabel("Предсказанный")
 plt.ylabel("Истинный")
 st.pyplot(plt)
+
