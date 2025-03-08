@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 # Загрузка данных
-data = pd.read_csv('telco_customer_churn.csv')
+data = pd.read_csv('telecom_users.csv')
 
 # Предобработка данных
 data = data.replace({'Yes': 1, 'No': 0})
