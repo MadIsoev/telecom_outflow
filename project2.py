@@ -120,6 +120,10 @@ else:
 st.subheader('Обзор данных')
 st.write(data.head())
 
+# Введенные данные
+st.subheader('Введенные данные')
+st.write(input_data)
+
 # Визуализация важности признаков
 st.subheader('Важность признаков')
 feature_importance = pd.DataFrame({
