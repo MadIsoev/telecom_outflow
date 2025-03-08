@@ -13,7 +13,7 @@ data = pd.read_csv('telecom_users.csv')
 # Предобработка данных
 data = data.replace({'Yes': 1, 'No': 0})
 data['SeniorCitizen'] = data['SeniorCitizen'].astype(int)
-data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce')
+data['TotalCharges'] = pd.to_numeric(data['TotalCharges'], errors='coerce').fillna(0)
 data.fillna(0, inplace=True)
 
 # Проверяем типы данных перед кодированием
@@ -31,7 +31,7 @@ features = ['tenure', 'PhoneService', 'InternetService', 'MonthlyCharges', 'Tota
             'Contract', 'PaymentMethod']
 scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(data[features]), columns=features)
-data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0})
+data['Churn'] = data['Churn'].map({'Yes': 1, 'No': 0}).fillna(0).astype(int)
 y = data['Churn']
 
 # Разделение данных
