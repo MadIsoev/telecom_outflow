@@ -136,4 +136,3 @@ sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Не отток
 plt.xlabel("Предсказанный")
 plt.ylabel("Истинный")
 st.pyplot(plt)
-
